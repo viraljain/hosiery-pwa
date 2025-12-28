@@ -137,6 +137,9 @@ Total: ${totalQty}
         <a href={`https://wa.me/?text=${encoded}`}  target="_blank" rel="noopener noreferrer" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
           Send via WhatsApp
         </a>
+        <a href={`https://chat.whatsapp.com/GUZtwWJJE3UCPDccb4vqP6/?text=${encoded}`}  target="_blank" rel="noopener noreferrer" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+          GROUP WhatsApp
+        </a>
       </div>
 
       {status && <p className="text-sm">{status}</p>}
