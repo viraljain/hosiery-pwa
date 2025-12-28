@@ -1,0 +1,122 @@
+// app/order/page.tsx
+'use client';
+import { useEffect, useMemo, useState } from 'react';
+import { getDealers, getProductsBase, getSkusByProductBase, createMatrixOrder } from '@/lib/data';
+
+export default function OrderPage() {
+  const [dealers, setDealers] = useState<any[]>([]);
+  const [bases, setBases] = useState<any[]>([]);
+  const [skus, setSkus] = useState<any[]>([]);
+
+  const [dealerId, setDealerId] = useState('');
+  const [baseId, setBaseId] = useState('');
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [status, setStatus] = useState<string>('');
+
+  useEffect(() => {
+    getDealers().then(({ data }) => setDealers(data ?? []));
+    getProductsBase().then(({ data }) => setBases(data ?? []));
+  }, []);
+
+  useEffect(() => {
+    if (!baseId) { setSkus([]); setQuantities({}); return; }
+    getSkusByProductBase(baseId).then(({ data }) => {
+      const list = data ?? [];
+      setSkus(list);
+      const q: Record<string, number> = {};
+      list.forEach((s: any) => { q[s.size_label] = 0; });
+      setQuantities(q);
+    });
+  }, [baseId]);
+
+  const total = useMemo(() => Object.values(quantities).reduce((a, b) => a + (b || 0), 0), [quantities]);
+
+  function updateQty(size_label: string, value: number) {
+    setQuantities(prev => ({ ...prev, [size_label]: Math.max(0, value) }));
+  }
+
+  async function submit() {
+    if (!dealerId || !baseId) { setStatus('Select dealer and product.'); return; }
+    const hasAny = Object.values(quantities).some(q => (q ?? 0) > 0);
+    if (!hasAny) { setStatus('Enter at least one size quantity.'); return; }
+
+    const { error } = await createMatrixOrder({
+      dealer_id: dealerId,
+      base_id: baseId,
+      quantities,
+      salesperson: 'web_app_user' // hardcoded for now
+    });
+    if (error) setStatus(`Error: ${error.message}`);
+    else {
+      setStatus('Order saved.');
+      // reset quantities
+      const reset: Record<string, number> = {};
+      skus.forEach((s: any) => { reset[s.size_label] = 0; });
+      setQuantities(reset);
+    }
+  }
+
+  return (
+    <div className="p-4 space-y-4 max-w-3xl mx-auto">
+      <h1 className="text-xl font-semibold">Order taking (matrix)</h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div>
+          <label className="text-sm font-medium">Dealer</label>
+          <select className="w-full border rounded p-2" value={dealerId} onChange={e => setDealerId(e.target.value)}>
+            <option value="">Select dealer</option>
+            {dealers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+          </select>
+        </div>
+        <div className="md:col-span-2">
+          <label className="text-sm font-medium">Product (base)</label>
+          <select className="w-full border rounded p-2" value={baseId} onChange={e => setBaseId(e.target.value)}>
+            <option value="">Select product</option>
+            {bases.map(b => <option key={b.id} value={b.id}>{b.base_name}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {skus.length > 0 && (
+        <div className="overflow-x-auto border rounded">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="text-left p-2">Size</th>
+                {skus.map(s => (
+                  <th key={s.id} className="w-6 max-w-[6ch] p-3 text-center">
+                    {s.size_label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="p-2 font-medium">Quantity</td>
+                {skus.map(s => (
+                  <td key={s.id} className="p-2">
+                    <input
+                      type="number"
+                      min={0} max={999}
+                      inputMode="numeric"
+                      className="w-auto max-w-[6ch] border rounded p-2 text-center"
+                      value={quantities[s.size_label] ?? 0}
+                      onChange={e => updateQty(s.size_label, parseInt(e.target.value || '0', 10))}
+                    />
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between">
+        <p className="text-sm">Total pieces: <span className="font-semibold">{total}</span></p>
+        <button className="bg-black text-white rounded px-4 py-2" onClick={submit}>Save order</button>
+      </div>
+
+      {status && <p className="text-sm">{status}</p>}
+    </div>
+  );
+}
