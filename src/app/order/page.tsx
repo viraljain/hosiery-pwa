@@ -12,6 +12,7 @@ export default function OrderPage() {
   const [baseId, setBaseId] = useState('');
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [status, setStatus] = useState<string>('');
+  const [encoded, setEncoded] = useState<string>('');
 
   useEffect(() => {
     getDealers().then(({ data }) => setDealers(data ?? []));
@@ -49,6 +50,25 @@ export default function OrderPage() {
     if (error) setStatus(`Error: ${error.message}`);
     else {
       setStatus('Order saved.');
+
+      //Setup Whatsapp message
+      const dealerName = dealers.find(d => d.id === dealerId).name || '';  
+      const dealerCity = dealers.find(d => d.id === dealerId).city || '';
+      const productName = bases.find(b => b.id === baseId)?.base_name || '';
+      const totalQty = Object.values(quantities).reduce((a, b) => a + (b || 0), 0);
+      const message = `
+Dealer: ${dealerName} (${dealerCity})
+${productName}
+${Object.entries(quantities)
+  .map(([size, qty]) => `${size}/${qty}`)
+  .join(", ")}
+Total: ${totalQty}
+`;
+      const encoded = encodeURIComponent(message);
+      setEncoded(encoded);
+      setStatus(`Order saved. You can also send via WhatsApp.`);
+
+
       // reset quantities
       const reset: Record<string, number> = {};
       skus.forEach((s: any) => { reset[s.size_label] = 0; });
@@ -112,8 +132,11 @@ export default function OrderPage() {
       )}
 
       <div className="flex items-center justify-between">
-        <p className="text-sm">Total pieces: <span className="font-semibold">{total}</span></p>
+        <p className="text-sm">Total: <span className="font-semibold">{total}</span></p>
         <button className="bg-black text-white rounded px-4 py-2" onClick={submit}>Save order</button>
+        <a href={`https://wa.me/?text=${encoded}`}  target="_blank" rel="noopener noreferrer" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+          Send via WhatsApp
+        </a>
       </div>
 
       {status && <p className="text-sm">{status}</p>}
