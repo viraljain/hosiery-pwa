@@ -143,8 +143,8 @@ export default function OrderPage() {
         <a href="#" onClick={(e) => 
                                     {
                                       e.preventDefault();
-                                      navigator.clipboard.writeText(encodedMessage).then(() => {
-                                        window.open("https://chat.whatsapp.com/<your-group-id>", "_blank");
+                                      navigator.clipboard.writeText(decodeURIComponent(encodedMessage)).then(() => {
+                                        window.open("https://chat.whatsapp.com/GUZtwWJJE3UCPDccb4vqP6", "_blank");
                                       });
                                     }
                             }
