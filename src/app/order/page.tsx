@@ -56,11 +56,11 @@ export default function OrderPage() {
       const dealerCity = dealers.find(d => d.id === dealerId).city || '';
       const productName = bases.find(b => b.id === baseId)?.base_name || '';
       const totalQty = Object.values(quantities).reduce((a, b) => a + (b || 0), 0);
-      const message = `Dealer: ${dealerName} (${dealerCity})\n`
+      const message = `${dealerName} (${dealerCity})\n`
                       + `${productName}\n`
                       + `${Object.entries(quantities)
                         .map(([size, qty]) => `${size}/${qty}`)
-                        .filter(entry => !entry.endsWith('/0'))git
+                        .filter(entry => !entry.endsWith('/0'))
                         .join(", ")}\n`
                       + `Total: ${totalQty}`;
       const encodedMessage = encodeURIComponent(message);
