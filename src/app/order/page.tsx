@@ -77,7 +77,7 @@ export default function OrderPage() {
 
   return (
     <div className="p-4 space-y-4 max-w-3xl mx-auto">
-      <h1 className="text-xl font-semibold">Order taking (matrix)</h1>
+      <h1 className="text-xl font-semibold">New Order</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
@@ -88,7 +88,7 @@ export default function OrderPage() {
           </select>
         </div>
         <div className="md:col-span-2">
-          <label className="text-sm font-medium">Product (base)</label>
+          <label className="text-sm font-medium">Product</label>
           <select className="w-full border rounded p-2" value={baseId} onChange={e => setBaseId(e.target.value)}>
             <option value="">Select product</option>
             {bases.map(b => <option key={b.id} value={b.id}>{b.base_name}</option>)}
@@ -103,7 +103,7 @@ export default function OrderPage() {
               <tr>
                 <th className="text-left p-2">Size</th>
                 {skus.map(s => (
-                  <th key={s.id} className="w-6 max-w-[6ch] p-3 text-center">
+                  <th key={s.id} className="w-4 max-w-[4ch] p-3 text-center">
                     {s.size_label}
                   </th>
                 ))}
@@ -111,14 +111,14 @@ export default function OrderPage() {
             </thead>
             <tbody>
               <tr>
-                <td className="p-2 font-medium">Quantity</td>
+                <td className="p-2 font-medium">Qty</td>
                 {skus.map(s => (
                   <td key={s.id} className="p-2">
                     <input
                       type="number"
                       min={0} max={999}
                       inputMode="numeric"
-                      className="w-auto max-w-[6ch] border rounded p-2 text-center"
+                      className="w-auto max-w-[4ch] border rounded p-2 text-center"
                       value={quantities[s.size_label] ?? 0}
                       onChange={e => updateQty(s.size_label, parseInt(e.target.value || '0', 10))}
                     />
