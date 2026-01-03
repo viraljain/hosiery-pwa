@@ -56,14 +56,13 @@ export default function OrderPage() {
       const dealerCity = dealers.find(d => d.id === dealerId).city || '';
       const productName = bases.find(b => b.id === baseId)?.base_name || '';
       const totalQty = Object.values(quantities).reduce((a, b) => a + (b || 0), 0);
-      const message = `
-                      Dealer: ${dealerName} (${dealerCity})
-                      ${productName}
-                      ${Object.entries(quantities)
+      const message = `Dealer: ${dealerName} (${dealerCity})\n`
+                      + `${productName}\n`
+                      + `${Object.entries(quantities)
                         .map(([size, qty]) => `${size}/${qty}`)
-                        .join(", ")}
-                      Total: ${totalQty}
-                      `;
+                        .filter(entry => !entry.endsWith('/0'))git
+                        .join(", ")}\n`
+                      + `Total: ${totalQty}`;
       const encodedMessage = encodeURIComponent(message);
       setEncodedMessage(encodedMessage);
       setStatus(`Order saved. You can also send via WhatsApp.`);
