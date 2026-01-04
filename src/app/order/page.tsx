@@ -77,7 +77,7 @@ export default function OrderPage() {
 
   return (
     <div className="p-4 space-y-4 max-w-3xl mx-auto">
-      <h1 className="text-xl font-semibold">New Order</h1>
+      <h1 className="text-xl font-semibold">NEW ORDER</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
