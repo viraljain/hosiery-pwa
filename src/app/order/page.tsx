@@ -112,7 +112,7 @@ export default function OrderPage() {
 
   const canSave = useMemo(() => {
     if (!selectedDealer?.id) return false;
-    return items.every(i => i.product_id && Object.values(i.quantities).some(q => (q ?? 0) > 0));
+    return items.every(i => i.base_id && Object.values(i.quantities).some(q => (q ?? 0) > 0));
   }, [items, selectedDealer]);
 
   const saveOrder = async () => {
@@ -123,7 +123,7 @@ export default function OrderPage() {
     const payload = {
       dealer_id: selectedDealer.id,
       items: items.map(i => ({
-        product_id: i.product_id,
+        base_id: i.base_id,
         quantities: Object.fromEntries(
           Object.entries(i.quantities).filter(([, q]) => Number(q) > 0)
         ),
@@ -200,7 +200,7 @@ export default function OrderPage() {
                     setItems(prev => {
                       const next = [...prev];
                       // clear selection when user edits
-                      next[idx].product_id = undefined;
+                      next[idx].base_id = undefined;
                       next[idx].product_name = undefined;
                       return next;
                     });
@@ -213,7 +213,7 @@ export default function OrderPage() {
                   placeholder="Type at least 3 letters..."
                   className="border px-2 py-1 w-full"
                 />
-                {row.product_id ? null : (
+                {row.base_id ? null : (
                   <div className="border mt-1 max-h-40 overflow-y-auto">
                     {productOptions[idx]?.map(p => (
                       <div
