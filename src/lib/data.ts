@@ -48,13 +48,3 @@ export async function getOrderbyId(orderId: string){
     .eq('id', orderId)
     .order('created_at', {ascending: false});
 }
-
-export async function getProducts() {
-  const { data, error } = await supabase
-    .from("products_base")
-    .select("id, base_name")
-    .order("base_name", { ascending: true });
-
-  if (error) throw new Error(error.message);
-  return data ?? [];
-}

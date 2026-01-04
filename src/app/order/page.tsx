@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getDealers, getProductsBase, getSkusByProductBase, createMatrixOrder } from '@/lib/data';
 
-export function OrderPage1() {
+export default function OrderPage() {
   const [dealers, setDealers] = useState<any[]>([]);
   const [bases, setBases] = useState<any[]>([]);
   const [skus, setSkus] = useState<any[]>([]);
@@ -155,19 +155,6 @@ export function OrderPage1() {
       </div>
 
       {status && <p className="text-sm">{status}</p>}
-    </div>
-  );
-}
-import OrderForm from "@/components/OrderForm";
-import { getProducts } from "@/lib/data";
-
-export default async function OrderPage() {
-  const products = await getProducts();
-
-  return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">Create Order (Adults)</h1>
-      <OrderForm products={products} />
     </div>
   );
 }
