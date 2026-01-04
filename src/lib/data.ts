@@ -48,3 +48,23 @@ export async function getOrderbyId(orderId: string){
     .eq('id', orderId)
     .order('created_at', {ascending: false});
 }
+
+export async function searchProducts(query: string) {
+   const { data, error } = await supabase
+    .from("products_base")
+    .select("id, base_name")
+    .ilike("base_name", `%${query}%`)
+    .limit(20);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function searchDealers(query: string) {
+  const { data, error } = await supabase
+    .from("dealers")
+    .select("id, name, phone")
+    .ilike("name", `%${query}%`)
+    .limit(20);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
