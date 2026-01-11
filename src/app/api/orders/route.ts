@@ -1,7 +1,6 @@
 // src/app/api/orders/route.ts
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import '../globals.css';
 
 
 export async function POST(req: Request) {
