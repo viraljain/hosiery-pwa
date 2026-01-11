@@ -222,16 +222,6 @@ export default function OrderPage() {
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
 
-    // reset
-    setAdultItems([{ quantities: {} }]);
-    setAdultProductQuery([""]);
-    setAdultProductOptions([[]]);
-
-    setKidsItems([{ quantities: {} }]);
-    setKidsProductQuery([""]);
-    setKidsProductOptions([[]]);
-  };
-
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-xl font-bold">Create order</h1>
