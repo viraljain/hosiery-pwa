@@ -453,3 +453,4 @@ function buildWhatsAppMessage({
     });
   return `${header}\n${adultItemsLines.join("\n")}\n${kidsItemsLines.join("\n")}`;
 }
+}
