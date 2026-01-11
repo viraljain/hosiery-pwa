@@ -65,6 +65,23 @@ export default function OrderPage() {
         });
     };
 
+    // Total for a single row (you can keep it inline or extract)
+const getRowTotal = (quantities: Record<string, number>) =>
+  Object.values(quantities).reduce((sum, q) => sum + (Number(q) || 0), 0);
+
+// Grand total - all adult rows + all kids rows
+const grandTotal = useMemo(() => {
+  const adultSum = adultItems.reduce(
+    (sum, row) => sum + getRowTotal(row.quantities),
+    0
+  );
+  const kidsSum = kidsItems.reduce(
+    (sum, row) => sum + getRowTotal(row.quantities),
+    0
+  );
+  return adultSum + kidsSum;
+}, [adultItems, kidsItems]);
+
     const selectProduct = (category: "adult" | "kids", idx: number, p: Product) => {
         const setterItems = category === "adult" ? setAdultItems : setKidsItems;
         const setterQuery = category === "adult" ? setAdultProductQuery : setKidsProductQuery;
@@ -159,30 +176,107 @@ export default function OrderPage() {
     }, [adultItems, kidsItems, selectedDealer]);
 
     const saveOrder = async () => {
-        // ... your existing save logic ...
-        // (keeping it the same, just not repeating here)
+    if (!selectedDealer?.id) {
+      alert("Select a dealer");
+      return;
+    }
+    const items = [...adultItems, ...kidsItems];
+    if (items.length === 0 || !items.some(i => i.base_id && Object.values(i.quantities).some(q => (q ?? 0) > 0))) {
+      alert("Add at least one item with quantity");
+      return;
+    }
+    
+    const payload = {
+      dealer_id: selectedDealer.id,
+      items: items.map(i => ({
+        base_id: i.base_id,
+        quantities: Object.fromEntries(
+          Object.entries(i.quantities).filter(([, q]) => Number(q) > 0)
+        ),
+      })),
     };
+    const res = await fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(`Error: ${data.error || "Failed to save"}`);
+      return;
+    }
+
+    // Build WhatsApp message and open deep link
+    const message = buildWhatsAppMessage({
+      orderId: data.order_id,
+      dealerName: selectedDealer.name,
+      adultItems: adultItems, kidsItems: kidsItems,
+    }).toUpperCase().replaceAll("MAESTRO", "M.").replaceAll("DIVYA", "D.").replaceAll("PLATINUM", "P.");
+    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
+
+    // reset
+    setAdultItems([{ quantities: {} }]);
+    setAdultProductQuery([""]);
+    setAdultProductOptions([[]]);
+
+    setKidsItems([{ quantities: {} }]);
+    setKidsProductQuery([""]);
+    setKidsProductOptions([[]]);
+  };
+  function buildWhatsAppMessage({
+  orderId,
+  dealerName,
+  adultItems,
+  kidsItems,
+}: {
+  orderId: string;
+  dealerName?: string;
+  adultItems: ItemRow[];
+  kidsItems: ItemRow[];
+}) {
+  const header = [dealerName ? `${dealerName}` : null]
+    .filter(Boolean)
+    .join("\n");
+  const adultItemsLines = adultItems
+    .filter(i => i.product_name)
+    .map(i => {
+      const qtys = Object.entries(i.quantities)
+        .filter(([, q]) => Number(q) > 0)
+        .map(([s, q]) => `${s}/${q}`)
+        .join(", ");
+      return `${i.product_name}: ${qtys || "—"}`;
+    });
+  const kidsItemsLines = kidsItems
+    .filter(i => i.product_name)
+    .map(i => {
+      const qtys = Object.entries(i.quantities)
+        .filter(([, q]) => Number(q) > 0)
+        .map(([s, q]) => `${s}/${q}`)
+        .join(", ");
+      return `${i.product_name}: ${qtys || "—"}`;
+    });
+  return `${header}\n${adultItemsLines.join("\n")}\n${kidsItemsLines.join("\n")}`;
+}
 
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-7xl">
-                <div className="flex items-center justify-between mb-8">
-                    <h1 className="text-2xl font-bold text-gray-900">Create New Order</h1>
-
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-bold text-gray-900">New Order</h2>
                     <button
                         onClick={saveOrder}
                         disabled={!canSave}
-                        className={`
-              px-6 py-2.5 rounded-lg font-medium text-white shadow-sm
-              transition-colors
-              ${canSave
-                                ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
-                                : "bg-gray-400 cursor-not-allowed"}
-            `}
-                    >
+                        className={`px-3 py-2.5 rounded-lg font-medium text-white shadow-sm transition-colors
+                                    ${canSave ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
+                                              : "bg-gray-400 cursor-not-allowed"
+                                    }`}>
                         Save & Send WhatsApp
                     </button>
-                </div>
+                    <span className="text-xs font-bold text-gray-700">
+                        Total Quantity {grandTotal}
+                    </span>
+                </div>                
 
                 {/* DEALER SECTION */}
                 <div className="mb-10 bg-white shadow rounded-xl p-6 border border-gray-200">
@@ -218,12 +312,17 @@ export default function OrderPage() {
                     )}
                 </div>
 
+                <div className="bg-red-500 p-4">
+  Test box
+</div>
+
+
                 {/* PRODUCTS SECTIONS */}
-                <div className="space-y-10">
+                <div className="space-y-1">
                     {/* ── ADULTS ──────────────────────────────────────────────── */}
                     <section className="bg-white shadow rounded-xl p-6 border border-gray-200">
-                        <div className="flex items-center justify-between mb-5">
-                            <h2 className="text-xl font-semibold text-gray-800">Gents / Ladies</h2>
+                        <div className="flex items-center px-8 justify-between">
+                            <h2 className="text-xl !mt-2 !mb-1 font-semibold text-gray-800">Gents / Ladies</h2>
                             <button
                                 onClick={() => addRow("adult")}
                                 className="px-4 py-2 bg-green-600 text-white rounded-lg 
@@ -332,6 +431,7 @@ export default function OrderPage() {
                                                 />
                                             </div>
                                         ))}
+                                        <span className="text-[14px] center font-medium text-gray-500 mb-0.5">Total<br/>{getRowTotal(row.quantities)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -429,6 +529,7 @@ export default function OrderPage() {
                                                 />
                                             </div>
                                         ))}
+                                        <span className="text-[14px] center font-medium text-gray-500 mb-0.5">Total<br/>{getRowTotal(row.quantities)}</span>
                                     </div>
                                 </div>
                             </div>
