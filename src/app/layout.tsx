@@ -27,11 +27,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       
       <body className="min-h-screen bg-white">
-        <a href="/" className="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" > Home </a>
-        {/* Tailwind test snippet */}
-        <div className="bg-blue-500 text-white p-4">
-          Tailwind is working inside layout.tsx!
-        </div>
+        <a href="/" className="inline-block bg-blue-600 text-white px-2 py-1 xl:px-4 xl:py-2 rounded hover:bg-blue-700" > Home </a>
+        <a href="/order" className="inline-block bg-blue-600 text-white px-2 py-1 xl:px-4 xl:py-2 rounded hover:bg-blue-700" > Order </a>
+        <a href="/summary" className="inline-block bg-blue-600 text-white px-2 py-1 xl:px-4 xl:py-2 rounded hover:bg-blue-700" > Summary </a>
         {children}
       </body>
     </html>

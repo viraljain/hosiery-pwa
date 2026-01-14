@@ -66,21 +66,21 @@ export default function OrderPage() {
     };
 
     // Total for a single row (you can keep it inline or extract)
-const getRowTotal = (quantities: Record<string, number>) =>
-  Object.values(quantities).reduce((sum, q) => sum + (Number(q) || 0), 0);
+    const getRowTotal = (quantities: Record<string, number>) =>
+        Object.values(quantities).reduce((sum, q) => sum + (Number(q) || 0), 0);
 
-// Grand total - all adult rows + all kids rows
-const grandTotal = useMemo(() => {
-  const adultSum = adultItems.reduce(
-    (sum, row) => sum + getRowTotal(row.quantities),
-    0
-  );
-  const kidsSum = kidsItems.reduce(
-    (sum, row) => sum + getRowTotal(row.quantities),
-    0
-  );
-  return adultSum + kidsSum;
-}, [adultItems, kidsItems]);
+    // Grand total - all adult rows + all kids rows
+    const grandTotal = useMemo(() => {
+        const adultSum = adultItems.reduce(
+            (sum, row) => sum + getRowTotal(row.quantities),
+            0
+        );
+        const kidsSum = kidsItems.reduce(
+            (sum, row) => sum + getRowTotal(row.quantities),
+            0
+        );
+        return adultSum + kidsSum;
+    }, [adultItems, kidsItems]);
 
     const selectProduct = (category: "adult" | "kids", idx: number, p: Product) => {
         const setterItems = category === "adult" ? setAdultItems : setKidsItems;
@@ -176,111 +176,111 @@ const grandTotal = useMemo(() => {
     }, [adultItems, kidsItems, selectedDealer]);
 
     const saveOrder = async () => {
-    if (!selectedDealer?.id) {
-      alert("Select a dealer");
-      return;
-    }
-    const items = [...adultItems, ...kidsItems];
-    if (items.length === 0 || !items.some(i => i.base_id && Object.values(i.quantities).some(q => (q ?? 0) > 0))) {
-      alert("Add at least one item with quantity");
-      return;
-    }
-    
-    const payload = {
-      dealer_id: selectedDealer.id,
-      items: items.map(i => ({
-        base_id: i.base_id,
-        quantities: Object.fromEntries(
-          Object.entries(i.quantities).filter(([, q]) => Number(q) > 0)
-        ),
-      })),
+        if (!selectedDealer?.id) {
+            alert("Select a dealer");
+            return;
+        }
+        const items = [...adultItems, ...kidsItems];
+        if (items.length === 0 || !items.some(i => i.base_id && Object.values(i.quantities).some(q => (q ?? 0) > 0))) {
+            alert("Add at least one item with quantity");
+            return;
+        }
+
+        const payload = {
+            dealer_id: selectedDealer.id,
+            items: items.map(i => ({
+                base_id: i.base_id,
+                quantities: Object.fromEntries(
+                    Object.entries(i.quantities).filter(([, q]) => Number(q) > 0)
+                ),
+            })),
+        };
+        const res = await fetch("/api/orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            alert(`Error: ${data.error || "Failed to save"}`);
+            return;
+        }
+
+        // Build WhatsApp message and open deep link
+        const message = buildWhatsAppMessage({
+            orderId: data.order_id,
+            dealerName: selectedDealer.name,
+            adultItems: adultItems, kidsItems: kidsItems,
+        }).toUpperCase().replaceAll("MAESTRO", "M.").replaceAll("DIVYA", "D.").replaceAll("PLATINUM", "P.");
+        const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+        window.open(url, "_blank");
+
+        // reset
+        setAdultItems([{ quantities: {} }]);
+        setAdultProductQuery([""]);
+        setAdultProductOptions([[]]);
+
+        setKidsItems([{ quantities: {} }]);
+        setKidsProductQuery([""]);
+        setKidsProductOptions([[]]);
     };
-    const res = await fetch("/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      alert(`Error: ${data.error || "Failed to save"}`);
-      return;
+    function buildWhatsAppMessage({
+        orderId,
+        dealerName,
+        adultItems,
+        kidsItems,
+    }: {
+        orderId: string;
+        dealerName?: string;
+        adultItems: ItemRow[];
+        kidsItems: ItemRow[];
+    }) {
+        const header = [dealerName ? `${dealerName}` : null]
+            .filter(Boolean)
+            .join("\n");
+        const adultItemsLines = adultItems
+            .filter(i => i.product_name)
+            .map(i => {
+                const qtys = Object.entries(i.quantities)
+                    .filter(([, q]) => Number(q) > 0)
+                    .map(([s, q]) => `${s}/${q}`)
+                    .join(", ");
+                return `${i.product_name}: ${qtys || "—"}`;
+            });
+        const kidsItemsLines = kidsItems
+            .filter(i => i.product_name)
+            .map(i => {
+                const qtys = Object.entries(i.quantities)
+                    .filter(([, q]) => Number(q) > 0)
+                    .map(([s, q]) => `${s}/${q}`)
+                    .join(", ");
+                return `${i.product_name}: ${qtys || "—"}`;
+            });
+        return `${header}\n${adultItemsLines.join("\n")}\n${kidsItemsLines.join("\n")}`;
     }
-
-    // Build WhatsApp message and open deep link
-    const message = buildWhatsAppMessage({
-      orderId: data.order_id,
-      dealerName: selectedDealer.name,
-      adultItems: adultItems, kidsItems: kidsItems,
-    }).toUpperCase().replaceAll("MAESTRO", "M.").replaceAll("DIVYA", "D.").replaceAll("PLATINUM", "P.");
-    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank");
-
-    // reset
-    setAdultItems([{ quantities: {} }]);
-    setAdultProductQuery([""]);
-    setAdultProductOptions([[]]);
-
-    setKidsItems([{ quantities: {} }]);
-    setKidsProductQuery([""]);
-    setKidsProductOptions([[]]);
-  };
-  function buildWhatsAppMessage({
-  orderId,
-  dealerName,
-  adultItems,
-  kidsItems,
-}: {
-  orderId: string;
-  dealerName?: string;
-  adultItems: ItemRow[];
-  kidsItems: ItemRow[];
-}) {
-  const header = [dealerName ? `${dealerName}` : null]
-    .filter(Boolean)
-    .join("\n");
-  const adultItemsLines = adultItems
-    .filter(i => i.product_name)
-    .map(i => {
-      const qtys = Object.entries(i.quantities)
-        .filter(([, q]) => Number(q) > 0)
-        .map(([s, q]) => `${s}/${q}`)
-        .join(", ");
-      return `${i.product_name}: ${qtys || "—"}`;
-    });
-  const kidsItemsLines = kidsItems
-    .filter(i => i.product_name)
-    .map(i => {
-      const qtys = Object.entries(i.quantities)
-        .filter(([, q]) => Number(q) > 0)
-        .map(([s, q]) => `${s}/${q}`)
-        .join(", ");
-      return `${i.product_name}: ${qtys || "—"}`;
-    });
-  return `${header}\n${adultItemsLines.join("\n")}\n${kidsItemsLines.join("\n")}`;
-}
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-gray-50 py-4 px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-7xl">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between pb-2">
                     <h2 className="text-xl font-bold text-gray-900">New Order</h2>
                     <button
                         onClick={saveOrder}
                         disabled={!canSave}
-                        className={`px-3 py-2.5 rounded-lg font-medium text-white shadow-sm transition-colors
+                        className={`px-2 py-1 rounded-lg font-medium text-white shadow-sm transition-colors
                                     ${canSave ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
-                                              : "bg-gray-400 cursor-not-allowed"
-                                    }`}>
+                                : "bg-gray-400 cursor-not-allowed"
+                            }`}>
                         Save & Send WhatsApp
                     </button>
                     <span className="text-xs font-bold text-gray-700">
                         Total Quantity {grandTotal}
                     </span>
-                </div>                
+                </div>
 
                 {/* DEALER SECTION */}
-                <div className="mb-10 bg-white shadow rounded-xl p-6 border border-gray-200">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="mb-2 bg-white shadow rounded-xl p-2 pl-4 pt-0.25 border-gray-200 focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]">
+                    <label className="block text-md font-medium text-gray-700 mb-0.5">
                         Dealer
                     </label>
                     <input
@@ -290,55 +290,57 @@ const grandTotal = useMemo(() => {
                             setDealerQuery(e.target.value);
                         }}
                         placeholder="Search dealer (min 3 characters)..."
-                        className="w-full md:w-96 px-4 py-2.5 border border-gray-300 rounded-lg 
-                     focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        className="w-full md:w-96 px-2 py-1 border border-gray-300 rounded-lg 
+                                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none "
                     />
-
-                    {selectedDealer ? null : (
-                        <div className="mt-1 border border-gray-200 rounded-lg max-h-60 overflow-y-auto bg-white shadow-sm">
-                            {dealerOptions.length === 0 && dealerQuery.length >= 3 && (
-                                <div className="px-4 py-3 text-sm text-gray-500">No dealers found</div>
-                            )}
-                            {dealerOptions.map((d) => (
-                                <div
-                                    key={d.id}
-                                    className="px-4 py-2.5 hover:bg-blue-50 cursor-pointer transition-colors"
-                                    onClick={() => setSelectedDealer(d)}
-                                >
-                                    {d.name}
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                    {selectedDealer ? null :
+                        (
+                            <div className="mt-1 border border-gray-200 rounded-lg max-h-60 overflow-y-auto bg-white shadow-sm">
+                                {dealerOptions.length === 0 && dealerQuery.length >= 3 && (
+                                    <div className="px-4 py-1 text-center text-sm font-bold  text-red-600">No dealers found</div>
+                                )}
+                                {dealerOptions.map((d) =>
+                                (
+                                    <div key={d.id} onClick={() => setSelectedDealer(d)}
+                                        className="px-4 py-1 text-sm hover:bg-blue-50 cursor-pointer transition-colors ">
+                                        {d.name}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                 </div>
-
-                <div className="bg-red-500 p-4">
-  Test box
-</div>
-
 
                 {/* PRODUCTS SECTIONS */}
                 <div className="space-y-1">
-                    {/* ── ADULTS ──────────────────────────────────────────────── */}
-                    <section className="bg-white shadow rounded-xl p-6 border border-gray-200">
-                        <div className="flex items-center px-8 justify-between">
-                            <h2 className="text-xl !mt-2 !mb-1 font-semibold text-gray-800">Gents / Ladies</h2>
+                    {/* ── ADULTS ──────────────────────────────────────────────── 
+                    mb-2 bg-white shadow rounded-xl p-2 pl-4 pt-0.25 border-gray-200 focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]*/}
+                    <section className="bg-white shadow rounded-xl p-0.5 border border-gray-200">
+                        <div className="flex items-center pl-2 mb-0.5 p-0.5 justify-between">
+                            <h2 className="text-md font-semibold ">Gents / Ladies</h2>
                             <button
                                 onClick={() => addRow("adult")}
-                                className="px-4 py-2 bg-green-600 text-white rounded-lg 
-                         hover:bg-green-700 transition-colors font-medium"
-                            >
+                                className="px-2 py-1 bg-green-600 text-white rounded-lg 
+                         hover:bg-green-700 transition-colors font-medium text-sm">
                                 + Add Product
                             </button>
                         </div>
 
                         {adultItems.map((row, idx) => (
-                            <div
-                                key={`adult-${idx}`}
-                                className="mb-6 last:mb-0 p-5 border border-gray-200 rounded-lg bg-gray-50"
-                            >
-                                <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-5">
-                                    <div className="flex-1 min-w-0">
+                            <div key={`adult-${idx}`}
+                                className="mb-1 last:mb-0 p-1 border border-gray-200 rounded-lg bg-gray-50
+                                            focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]">
+
+                                <div className="flex flex-col sm:flex-row sm:items-start gap-0 mb-0.5">
+                                    <div className="flex gap-1 min-w-0 mb-0">
+                                        <button
+                                            onClick={() => {
+                                                if (window.confirm(`Remove this product (${row.product_name || "unsaved"})?`)) {
+                                                    removeRow("adult", idx);
+                                                }
+                                            }}
+                                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors whitespace-nowrap text-sm font-medium shadow-sm"
+                                            title="Remove this product row"
+                                        >X</button>
                                         <input
                                             value={adultProductQuery[idx] ?? ""}
                                             onChange={(e) => {
@@ -355,16 +357,17 @@ const grandTotal = useMemo(() => {
                                                 });
                                             }}
                                             placeholder="Search product (min 3 chars)..."
-                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg 
-                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                            className="flex-1 px-4 py-.5 border border-gray-300 rounded-lg 
+                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none "
                                         />
-
+                                    </div>
+                                    <div className="mt-0 p-0">
                                         {!row.base_id && adultProductOptions[idx]?.length > 0 && (
                                             <div className="mt-1 border border-gray-200 rounded-lg max-h-60 overflow-y-auto bg-white shadow-sm">
                                                 {adultProductOptions[idx].map((p) => (
                                                     <div
                                                         key={p.id}
-                                                        className="px-4 py-2.5 hover:bg-blue-50 cursor-pointer transition-colors"
+                                                        className="px-4 py-.25  hover:bg-blue-50 cursor-pointer transition-colors"
                                                         onClick={() => selectProduct("adult", idx, p)}
                                                     >
                                                         {p.base_name}
@@ -373,65 +376,25 @@ const grandTotal = useMemo(() => {
                                             </div>
                                         )}
                                     </div>
-
-                                    {/* <button
-                                        onClick={() => removeRow("adult", idx)}
-                                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors whitespace-nowrap"
-                                    >
-                                        Remove
-                                    </button> */}
                                 </div>
 
                                 {/* SIZE HEADERS + INPUTS */}
-                                {/* <div className="overflow-x-auto">
-                  <div className="inline-grid grid-flow-col gap-3 min-w-max">
-                    {ADULT_SIZES.map((size) => (
-                      <div key={size} className="text-center min-w-[20px]">
-                        <div className="text-xs font-medium text-gray-600 mb-1.5">{size}</div>
-                        <input
-                          type="number"
-                          min={0}
-                          max={999}
-                          value={row.quantities[size] ?? ""}
-                          onChange={(e) => setQty("adult", idx, size, e.target.value)}
-                          className="w-full px-2 py-1.5 text-center border border-gray-300 rounded-md 
-                                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div> */}
-                                <div className="overflow-x-auto pb-2">
-                                    <div className="inline-flex gap-1">
-                                        <button
-          onClick={() => {
-            if (window.confirm(`Remove this product (${row.product_name || "unsaved"})?`)) {
-              removeRow("adult", idx);
-            }
-          }}
-          className="px-2 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors whitespace-nowrap text-sm font-medium shadow-sm"
-          title="Remove this product row"
-        >X</button>
+                                <div className="overflow-x-auto mt-0 pt-0">
+                                    <div className="inline-flex gap-1.25 m-0">
                                         {ADULT_SIZES.map((size) => (
-                                            <div key={size} className="flex flex-col items-center w-3">
-                                                <span className="text-[12px] font-medium text-gray-500 mb-0.5">
+                                            <div key={size} className="flex flex-col items-center w-7.75 pl-2 m-0">
+                                                <span className="text-[14px] font-medium text-gray-500">
                                                     {size}
                                                 </span>
-                                                
-                                                <input
-                                                    type="number"
-                                                    value={row.quantities[size] ?? ""}
+                                                <input type="number" value={row.quantities[size] ?? ""}
                                                     onChange={(e) => setQty("adult", idx, size, e.target.value)}
-                                                    className="w-auto h-3 max-w-[4ch] text-center
+                                                    className="w-auto max-w-[33px] text-center
                                                                 border border-gray-300 rounded-md
-                                                                focus:ring-1 focus:ring-blue-500 focus:border-blue-500
-                                                                // [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none
-                                                                // [&::-webkit-inner-spin-button]:appearance-none
-                                                            "
+                                                                focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                                 />
                                             </div>
                                         ))}
-                                        <span className="text-[14px] center font-medium text-gray-500 mb-0.5">Total<br/>{getRowTotal(row.quantities)}</span>
+                                        <span className="text-[15px] text-center font-medium text-gray-500 mb-0.5">Total<br />{getRowTotal(row.quantities)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -439,25 +402,33 @@ const grandTotal = useMemo(() => {
                     </section>
 
                     {/* ── KIDS ────────────────────────────────────────────────── */}
-                    <section className="bg-white shadow rounded-xl p-6 border border-gray-200">
-                        <div className="flex items-center justify-between mb-5">
-                            <h2 className="text-xl font-semibold text-gray-800">Kids</h2>
+                    <section className="bg-white shadow rounded-xl p-0.5 border border-gray-200">
+                        <div className="flex items-center pl-2 mb-0.5 p-0.5 justify-between">
+                            <h2 className="text-md font-semibold ">Kids</h2>
                             <button
                                 onClick={() => addRow("kids")}
-                                className="px-4 py-2 bg-green-600 text-white rounded-lg 
-                         hover:bg-green-700 transition-colors font-medium"
-                            >
+                                className="px-2 py-1 bg-green-600 text-white rounded-lg 
+                         hover:bg-green-700 transition-colors font-medium text-sm">
                                 + Add Product
                             </button>
                         </div>
 
                         {kidsItems.map((row, idx) => (
-                            <div
-                                key={`kids-${idx}`}
-                                className="mb-6 last:mb-0 p-5 border border-gray-200 rounded-lg bg-gray-50"
-                            >
-                                <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-5">
-                                    <div className="flex-1 min-w-0">
+                            <div key={`kids-${idx}`}
+                                className="mb-1 last:mb-0 p-1 border border-gray-200 rounded-lg bg-gray-50
+                                            focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]">
+
+                                <div className="flex flex-col sm:flex-row sm:items-start gap-0 mb-0.5">
+                                    <div className="flex gap-1 min-w-0 mb-0">
+                                        <button
+                                            onClick={() => {
+                                                if (window.confirm(`Remove this product (${row.product_name || "unsaved"})?`)) {
+                                                    removeRow("kids", idx);
+                                                }
+                                            }}
+                                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors whitespace-nowrap text-sm font-medium shadow-sm"
+                                            title="Remove this product row"
+                                        >X</button>
                                         <input
                                             value={kidsProductQuery[idx] ?? ""}
                                             onChange={(e) => {
@@ -474,16 +445,17 @@ const grandTotal = useMemo(() => {
                                                 });
                                             }}
                                             placeholder="Search product (min 3 chars)..."
-                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg 
-                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                            className="flex-1 px-4 py-.5 border border-gray-300 rounded-lg 
+                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none "
                                         />
-
+                                    </div>
+                                    <div className="mt-0 p-0">
                                         {!row.base_id && kidsProductOptions[idx]?.length > 0 && (
                                             <div className="mt-1 border border-gray-200 rounded-lg max-h-60 overflow-y-auto bg-white shadow-sm">
                                                 {kidsProductOptions[idx].map((p) => (
                                                     <div
                                                         key={p.id}
-                                                        className="px-4 py-2.5 hover:bg-blue-50 cursor-pointer transition-colors"
+                                                        className="px-4 py-.25  hover:bg-blue-50 cursor-pointer transition-colors"
                                                         onClick={() => selectProduct("kids", idx, p)}
                                                     >
                                                         {p.base_name}
@@ -492,44 +464,25 @@ const grandTotal = useMemo(() => {
                                             </div>
                                         )}
                                     </div>
-
-                                    
                                 </div>
 
                                 {/* SIZE HEADERS + INPUTS */}
-                                <div className="overflow-x-auto">
-                                    
-                                    <div className="inline-grid grid-flow-col gap-3 min-w-max">
-                                        <button
-                                        // onClick={() => removeRow("kids", idx)}
-                                        // className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors whitespace-nowrap"
-                                        onClick={() => {
-            if (window.confirm(`Remove this product (${row.product_name || "unsaved"})?`)) {
-              removeRow("kids", idx);
-            }
-          }}
-          className="px-2 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors whitespace-nowrap text-sm font-medium shadow-sm"
-          title="Remove this product row"
-                                    >X</button>
+                                <div className="overflow-x-auto mt-0 pt-0">
+                                    <div className="inline-flex gap-1.25 m-0">
                                         {KIDS_SIZES.map((size) => (
-                                            <div key={size} className="text-center min-w-[10px]">
-                                                <div className="text-[12px] text-gray-600 mb-1.5">{size}</div>
-                                                <input
-                                                    type="number"
-                                                    min={0}
-                                                    max={999}
-                                                    value={row.quantities[size] ?? ""}
+                                            <div key={size} className="flex flex-col items-center w-7.75 pl-2 m-0">
+                                                <span className="text-[14px] font-medium text-gray-500">
+                                                    {size}
+                                                </span>
+                                                <input type="number" value={row.quantities[size] ?? ""}
                                                     onChange={(e) => setQty("kids", idx, size, e.target.value)}
-                                                    className="w-auto max-w-[4ch] px-0.25 py-1.5 text-center 
-                          border border-gray-300 rounded-md 
-                                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                // className="w-auto max-w-[4ch] border rounded p-2 text-center"
-                                                //border border-gray-300 rounded-md
-                                                // focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+                                                    className="w-auto max-w-[33px] text-center
+                                                                border border-gray-300 rounded-md
+                                                                focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                                 />
                                             </div>
                                         ))}
-                                        <span className="text-[14px] center font-medium text-gray-500 mb-0.5">Total<br/>{getRowTotal(row.quantities)}</span>
+                                        <span className="text-[15px] text-center font-medium text-gray-500 mb-0.5">Total<br />{getRowTotal(row.quantities)}</span>
                                     </div>
                                 </div>
                             </div>
