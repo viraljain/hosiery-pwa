@@ -8,7 +8,8 @@ type Dealer = { id: string; name: string; phone?: string };
 type Product = { id: string; base_name: string };
 type ItemRow = { base_id?: string; product_name?: string; quantities: Record<string, number> };
 
-const ADULT_SIZES = ["75/78", "80", "85", "90", "95", "100", "105", "110", "120"];
+// const ADULT_SIZES = ["75/78", "80", "85", "90", "95", "100", "105", "110", "120"];
+const ADULT_SIZES = ["77", "80", "85", "90", "95", "100", "105", "110", "120"];
 const KIDS_SIZES = ["35", "40", "45", "50", "55", "60", "65", "70", "75"];
 
 export default function OrderPage() {
@@ -260,7 +261,7 @@ export default function OrderPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-4 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-gray-50 py-4 px-2 sm:px-2 lg:px-3">
             <div className="mx-auto max-w-7xl">
                 <div className="flex items-center justify-between pb-2">
                     <h2 className="text-xl font-bold text-gray-900">New Order</h2>

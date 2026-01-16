@@ -1,32 +1,73 @@
 // app/summary/page.tsx
 'use client';
-import { useEffect, useMemo, useState } from 'react';
-import { getDealers, getOrdersMatrix, getSkusByProductBase } from '@/lib/data';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { getDealers, getOrdersMatrix, getSkusByProductBase, searchDealers } from '@/lib/data';
 
-const ADULT_SIZES = ["75", "80", "85", "90", "95", "100", "105", "110", "120"];
+type Dealer = { id: string; name: string; phone?: string };
+
+// const ADULT_SIZES = ["75/78", "80", "85", "90", "95", "100", "105", "110", "120"];
+const ADULT_SIZES = ["77", "80", "85", "90", "95", "100", "105", "110", "120"];
 const KIDS_SIZES = ["35", "40", "45", "50", "55", "60", "65", "70", "75"];
 
 export default function SummaryPage() {
-  const [dealers, setDealers] = useState<any[]>([]);
-  const [dealerId, setDealerId] = useState('');
+  // const [dealers, setDealers] = useState<any[]>([]);
+  // const [dealerId, setDealerId] = useState('');
+
+  const [dealerQuery, setDealerQuery] = useState("");
+  const [dealerOptions, setDealerOptions] = useState<Dealer[]>([]);
+  const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
+
   const [orders, setOrders] = useState<any[]>([]);
   const [groups, setGroups] = useState<any[]>([]); // Grouped orders
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null); // For modal
   const [pageSize, setPageSize] = useState(10); // Customizable page size
   const [currentPage, setCurrentPage] = useState(0); // Current page index
 
+  const debounceRef = useRef<number | null>(null);
+
   // Fetch dealers on mount
-  useEffect(() => {
-    getDealers().then(({ data }) => setDealers(data ?? []));
-  }, []);
+  // useEffect(() => {
+  //   getDealers().then(({ data }) => setDealers(data ?? []));
+  // }, []);
 
   // Fetch and filter orders when dealerId changes
+  // useEffect(() => {
+  //   getOrdersMatrix().then(({ data }) => {
+  //     const list = (data ?? []).filter((o: any) => !dealerId || o.dealer?.id === dealerId);
+  //     setOrders(list);
+  //   });
+  // }, [dealerId]);
+
+    // Fetch and filter orders when dealerId changes
   useEffect(() => {
     getOrdersMatrix().then(({ data }) => {
-      const list = (data ?? []).filter((o: any) => !dealerId || o.dealer?.id === dealerId);
+      const list = (data ?? []).filter((o: any) => !selectedDealer || o.dealer?.id === selectedDealer.id);
       setOrders(list);
     });
-  }, [dealerId]);
+  }, [selectedDealer]);
+
+      // ── Debounced searches ──────────────────────────────────────────────
+      useEffect(() => {
+          if (debounceRef.current) clearTimeout(debounceRef.current);
+  
+          debounceRef.current = window.setTimeout(async () => {
+              if (dealerQuery.trim().length < 3) {
+                  setDealerOptions([]);
+                  return;
+              }
+              try {
+                  const res = await searchDealers(dealerQuery.trim());
+                  setDealerOptions(res ?? []);
+              } catch {
+                  setDealerOptions([]);
+              }
+          }, 300);
+  
+          return () => {
+              if (debounceRef.current) clearTimeout(debounceRef.current);
+          };
+      }, [dealerQuery]);
+  
 
   // Group orders into logical "orders" based on dealer and created_at
   // Assuming items from the same API post share dealer and created_at
@@ -93,15 +134,47 @@ export default function SummaryPage() {
   }, [selectedOrder]);
 
   return (
-    <div className="p-4 space-y-4 max-w-3xl mx-auto">
+    <div className="p-4 space-y-4 max-w-3xl mx-auto dark:text-white">
       <h1 className="text-xl font-semibold">Order summary</h1>
 
-      <div className="space-y-2">
+      {/* <div className="space-y-2">
         <label className="text-sm font-medium">Filter by dealer</label>
         <select className="w-full border rounded p-2" value={dealerId} onChange={e => setDealerId(e.target.value)}>
           <option value="">All dealers</option>
           {dealers.map(d => <option key={d.id} value={d.id}>{d.name} ({d.city})</option>)}
         </select>
+      </div> */}
+
+      {/* DEALER SECTION */}
+      <div className="mb-2 bg-white dark:bg-gray-800 shadow rounded-xl p-2 pl-4 pt-0.25 border-gray-200 focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]">
+          <label className="block text-md font-medium text-gray-700 dark:text-white mb-0.5">
+              Dealer
+          </label>
+          <input
+              value={selectedDealer?.name ?? dealerQuery}
+              onChange={(e) => {
+                  setSelectedDealer(null);
+                  setDealerQuery(e.target.value);
+              }}
+              placeholder="Search dealer (min 3 characters)..."
+              className="w-full md:w-96 px-2 py-1 border border-gray-300 rounded-lg 
+                          focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none "
+          />
+          {selectedDealer ? null :
+              (
+                  <div className="mt-1 border border-gray-200 rounded-lg max-h-60 overflow-y-auto bg-white shadow-sm">
+                      {dealerOptions.length === 0 && dealerQuery.length >= 3 && (
+                          <div className="px-4 py-1 text-center text-sm font-bold  text-red-600">No dealers found</div>
+                      )}
+                      {dealerOptions.map((d) =>
+                      (
+                          <div key={d.id} onClick={() => setSelectedDealer(d)}
+                              className="px-4 py-1 text-sm dark:text-gray-950 hover:bg-blue-50 cursor-pointer transition-colors ">
+                              {d.name}
+                          </div>
+                      ))}
+                  </div>
+              )}
       </div>
 
       <div className="space-y-2">
@@ -122,7 +195,7 @@ export default function SummaryPage() {
 
       <div className="border rounded overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-100">
+          <thead className="bg-gray-100 dark:bg-gray-400">
             <tr>
               <th className="text-left p-2">Dealer</th>
               <th className="text-left p-2">Date</th>
@@ -153,7 +226,7 @@ export default function SummaryPage() {
       {/* Pagination controls */}
       <div className="flex justify-between items-center">
         <button
-          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+          className="px-4 py-2 bg-gray-200 dark:bg-gray-400 rounded disabled:opacity-50"
           disabled={currentPage === 0}
           onClick={() => setCurrentPage(p => p - 1)}
         >
@@ -161,7 +234,7 @@ export default function SummaryPage() {
         </button>
         <span>Page {currentPage + 1} of {totalPages}</span>
         <button
-          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+          className="px-4 py-2 bg-gray-200 dark:bg-gray-400 rounded disabled:opacity-50"
           disabled={currentPage + 1 >= totalPages}
           onClick={() => setCurrentPage(p => p + 1)}
         >
@@ -185,7 +258,7 @@ export default function SummaryPage() {
           onClick={() => setSelectedOrder(null)} // Close on outside click
         >
           <div
-            className="bg-white p-6 rounded-lg shadow-lg max-w-4xl w-full max-h-[80vh] overflow-y-auto"
+            className="bg-white dark:bg-gray-500/93 p-6 rounded-lg shadow-lg max-w-4xl w-full max-h-[80vh] overflow-y-auto"
             onClick={e => e.stopPropagation()} // Prevent close on inside click
           >
             <h2 className="text-lg font-semibold mb-4">
@@ -202,22 +275,32 @@ export default function SummaryPage() {
                   return (
                     <div key={idx} className="mb-4">
                       <div className="font-medium">{item.base?.base_name}</div>
-                      <div className="flex gap-2 mt-1">
+                      {/* <div className="flex gap-2 mt-1"> */}
+                      <table><tbody>
+                        <tr className='border'>
                         {ADULT_SIZES.map(size => (
-                          <div key={size} className="w-12 text-center text-sm font-medium">
-                            {size}
-                          </div>
+                          // <div key={size} className="w-12 text-center text-sm font-medium">
+                          //   {size}
+                          // </div>
+                          <td key={size} className="w-12 text-center text-sm font-medium border">{size}</td>
                         ))}
-                        <div className="w-12 text-center text-sm font-medium">Total</div>
-                      </div>
-                      <div className="flex gap-2 mt-1">
+                        {/* <div className="w-12 text-center text-sm font-medium">Total</div> */}
+                        <td className="w-12 text-center text-sm font-medium">Total</td>
+                      </tr>
+                      {/* <div className="flex gap-2 mt-1"> */}
+                      <tr className='border'>  
                         {ADULT_SIZES.map(size => (
-                          <div key={size} className="w-12 text-center">
+                          // <div key={size} className="w-12 text-center">
+                          <td key={size} className="w-12 text-center border">
                             {quantities[size] || 0}
-                          </div>
+                          {/* </div> */}
+                          </td>
                         ))}
-                        <div className="w-12 text-center">{total}</div>
-                      </div>
+                        {/* <div className="w-12 text-center">{total}</div> */}
+                        <td className="w-12 text-center">{total}</td>
+                      {/* </div> */}
+                      </tr>
+                      </tbody></table>
                     </div>
                   );
                 })}
@@ -234,22 +317,34 @@ export default function SummaryPage() {
                   return (
                     <div key={idx} className="mb-4">
                       <div className="font-medium">{item.base?.base_name}</div>
-                      <div className="flex gap-2 mt-1">
+                      {/* <div className="flex gap-2 mt-1"> */}
+                      <table><tbody>
+                        <tr className='border'>
                         {KIDS_SIZES.map(size => (
-                          <div key={size} className="w-12 text-center text-sm font-medium">
+                          // <div key={size} className="w-12 text-center text-sm font-medium">
+                          <td key={size} className="w-12 text-center text-sm font-medium border">
                             {size}
-                          </div>
+                          {/* </div> */}
+                          </td>
                         ))}
-                        <div className="w-12 text-center text-sm font-medium">Total</div>
-                      </div>
-                      <div className="flex gap-2 mt-1">
+                        {/* <div className="w-12 text-center text-sm font-medium">Total</div> */}
+                        <td className="w-12 text-center text-sm font-medium">Total</td>
+                      {/* </div> */}
+                      </tr>
+                      {/* <div className="flex gap-2 mt-1"> */}
+                      <tr className='border'>
                         {KIDS_SIZES.map(size => (
-                          <div key={size} className="w-12 text-center">
+                          // <div key={size} className="w-12 text-center">
+                          <td key={size} className="w-12 text-center border">
                             {quantities[size] || 0}
-                          </div>
+                          {/* </div> */}
+                          </td>
                         ))}
-                        <div className="w-12 text-center">{total}</div>
-                      </div>
+                        {/* <div className="w-12 text-center">{total}</div> */}
+                        <td className="w-12 text-center">{total}</td>
+                      {/* </div> */}
+                      </tr>
+                      </tbody></table>
                     </div>
                   );
                 })}
