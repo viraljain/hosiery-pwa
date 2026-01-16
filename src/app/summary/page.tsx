@@ -134,8 +134,24 @@ export default function SummaryPage() {
   }, [selectedOrder]);
 
   return (
-    <div className="p-4 space-y-4 max-w-3xl mx-auto dark:text-white">
+    <div className="p-2 space-y-4 max-w-3xl mx-auto dark:text-white">
+      <div className="flex items-center justify-between">
       <h1 className="text-xl font-semibold">Order summary</h1>
+      <div><label className="text-sm font-medium">Records per page</label>
+        <select
+          className=" border rounded p-1"
+          value={pageSize}
+          onChange={e => {
+            setPageSize(Number(e.target.value));
+            setCurrentPage(0); // Reset to first page
+          }}
+        >
+          <option value={10}>10</option>
+          <option value={20}>20</option>
+          <option value={50}>50</option>
+        </select>
+        </div>
+        </div>
 
       {/* <div className="space-y-2">
         <label className="text-sm font-medium">Filter by dealer</label>
@@ -177,44 +193,28 @@ export default function SummaryPage() {
               )}
       </div>
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Records per page</label>
-        <select
-          className="w-full border rounded p-2"
-          value={pageSize}
-          onChange={e => {
-            setPageSize(Number(e.target.value));
-            setCurrentPage(0); // Reset to first page
-          }}
-        >
-          <option value={10}>10</option>
-          <option value={20}>20</option>
-          <option value={50}>50</option>
-        </select>
-      </div>
-
       <div className="border rounded overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-100 dark:bg-gray-400">
             <tr>
-              <th className="text-left p-2">Dealer</th>
-              <th className="text-left p-2">Date</th>
-              <th className="text-right p-2">Total Qty</th>
-              <th className="text-left p-2">Actions</th>
+              <th className="text-center p-0.5">Dealer</th>
+              <th className="text-center p-0.5">Date</th>
+              <th className="text-center p-0.5">Total</th>
+              <th className="text-center p-0.5">Actions</th>
             </tr>
           </thead>
           <tbody>
             {paginatedGroups.map(g => (
               <tr key={g.id} className="border-t">
-                <td className="p-2">{g.dealer?.name} ({g.dealer?.city})</td>
-                <td className="p-2">{new Date(g.created_at).toLocaleString()}</td>
-                <td className="p-2 text-right">{g.total_qty}</td>
-                <td className="p-2">
+                <td className="p-0.5">{g.dealer?.name} ({g.dealer?.city})</td>
+                <td className="p-0.5">{new Date(g.created_at).toLocaleString()}</td>
+                <td className="p-0.5 text-right">{g.total_qty}</td>
+                <td className="p-0.5 text-center">
                   <button
                     className="text-blue-600 hover:underline"
                     onClick={() => setSelectedOrder(g)}
                   >
-                    View details
+                    View
                   </button>
                 </td>
               </tr>
