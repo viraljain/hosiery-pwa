@@ -6,10 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "dev:https": "next dev --experimental-https",
+    "dev:https-turbo": "next dev --turbo --experimental-https"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",
+    "clipboardy": "^5.0.2",
     "next": "16.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3"

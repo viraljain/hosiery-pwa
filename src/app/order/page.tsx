@@ -3,10 +3,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { searchProducts, searchDealers } from "@/lib/data";
+import clipboardy from "clipboardy";
 
 type Dealer = { id: string; name: string; phone?: string };
-type Product = { id: string; base_name: string };
-type ItemRow = { base_id?: string; product_name?: string; quantities: Record<string, number> };
+type Product = { id: string; base_name: string; base_name_nick?: string };
+type ItemRow = { base_id?: string; product_name?: string; product_name_nick?: string; quantities: Record<string, number> };
 
 // const ADULT_SIZES = ["75/78", "80", "85", "90", "95", "100", "105", "110", "120"];
 const ADULT_SIZES = ["77", "80", "85", "90", "95", "100", "105", "110", "120"];
@@ -90,7 +91,7 @@ export default function OrderPage() {
 
         setterItems((prev) => {
             const next = [...prev];
-            next[idx] = { ...next[idx], base_id: p.id, product_name: p.base_name };
+            next[idx] = { ...next[idx], base_id: p.id, product_name: p.base_name, product_name_nick: p.base_name_nick };
             return next;
         });
 
@@ -176,6 +177,7 @@ export default function OrderPage() {
         return hasValidAdult || hasValidKids;
     }, [adultItems, kidsItems, selectedDealer]);
 
+    const [message, setMessage] = useState<string>('');
     const saveOrder = async () => {
         if (!selectedDealer?.id) {
             alert("Select a dealer");
@@ -208,37 +210,36 @@ export default function OrderPage() {
         }
 
         // Build WhatsApp message and open deep link
-        const message = buildWhatsAppMessage({
+        const message1 = buildWhatsAppMessage({
             orderId: data.order_id,
             dealerName: selectedDealer.name,
             adultItems: adultItems, kidsItems: kidsItems,
-        }).toUpperCase().replaceAll("MAESTRO", "M.").replaceAll("DIVYA", "D.").replaceAll("PLATINUM", "P.");
-        const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
-        window.open(url, "_blank");
+        }).replaceAll(/MAESTRO/gi, "M.").replaceAll(/DIVYA/gi, "D.").replaceAll(/PLATINUM/gi, "P.").replaceAll(/RN/gi, "RN").replaceAll(/RNS/gi, "RNS")
+        .toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); // capitalize first letters
+
+        setMessage(message1);
+
+        // await navigator.clipboard.writeText(message);
+
+        // const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+        // const url = `https://chat.whatsapp.com/GUZtwWJJE3UCPDccb4vqP6`;
+        // window.open(url, "_blank");
+        
 
         // reset
-        setAdultItems([{ quantities: {} }]);
-        setAdultProductQuery([""]);
-        setAdultProductOptions([[]]);
+        // setAdultItems([{ quantities: {} }]);
+        // setAdultProductQuery([""]);
+        // setAdultProductOptions([[]]);
 
-        setKidsItems([{ quantities: {} }]);
-        setKidsProductQuery([""]);
-        setKidsProductOptions([[]]);
+        // setKidsItems([{ quantities: {} }]);
+        // setKidsProductQuery([""]);
+        // setKidsProductOptions([[]]);
     };
-    function buildWhatsAppMessage({
-        orderId,
-        dealerName,
-        adultItems,
-        kidsItems,
-    }: {
-        orderId: string;
-        dealerName?: string;
-        adultItems: ItemRow[];
-        kidsItems: ItemRow[];
-    }) {
-        const header = [dealerName ? `${dealerName}` : null]
-            .filter(Boolean)
-            .join("\n");
+    function buildWhatsAppMessage({orderId,dealerName,adultItems,kidsItems,}
+        : {orderId: string;dealerName?: string;adultItems: ItemRow[];kidsItems: ItemRow[];}) 
+    {
+        const header = [dealerName ? `${dealerName}` : null].filter(Boolean).join("\n");
+
         const adultItemsLines = adultItems
             .filter(i => i.product_name)
             .map(i => {
@@ -246,7 +247,7 @@ export default function OrderPage() {
                     .filter(([, q]) => Number(q) > 0)
                     .map(([s, q]) => `${s}/${q}`)
                     .join(", ");
-                return `${i.product_name}: ${qtys || "—"}`;
+                return `${(i.product_name_nick??"").length > 0 ? i.product_name_nick : i.product_name}: ${qtys || "—"}`;
             });
         const kidsItemsLines = kidsItems
             .filter(i => i.product_name)
@@ -255,7 +256,7 @@ export default function OrderPage() {
                     .filter(([, q]) => Number(q) > 0)
                     .map(([s, q]) => `${s}/${q}`)
                     .join(", ");
-                return `${i.product_name}: ${qtys || "—"}`;
+                return `${(i.product_name_nick??"").length > 0 ? i.product_name_nick : i.product_name}: ${qtys || "—"}`;
             });
         return `${header}\n${adultItemsLines.join("\n")}\n${kidsItemsLines.join("\n")}`;
     }
@@ -268,12 +269,42 @@ export default function OrderPage() {
                     <button
                         onClick={saveOrder}
                         disabled={!canSave}
-                        className={`px-2 py-1 rounded-lg font-medium text-white shadow-sm transition-colors
+                        className={`px-3 py-1 rounded-lg font-medium text-white shadow-sm transition-colors
                                     ${canSave ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
                                 : "bg-gray-400 cursor-not-allowed"
                             }`}>
-                        Save & Send WhatsApp
+                        Save Order
                     </button>
+                    <button onClick={(e)=> {
+                            e.preventDefault();
+                            navigator.clipboard.writeText(message); 
+                            alert("Order message copied to clipboard! "+message);
+                            const url = `https://chat.whatsapp.com/GUZtwWJJE3UCPDccb4vqP6`;
+                            window.open(url, "_blank");
+                    }}
+                    disabled={!canSave}
+                    className={`px-3 py-1 rounded-lg font-medium text-white shadow-sm transition-colors
+                                    ${canSave ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
+                                : "bg-gray-400 cursor-not-allowed"
+                            }`}
+                    >
+                        WApp
+                    </button>
+                     <a href="#"
+                      onClick={(e) => 
+                                    {
+                                      e.preventDefault();
+                                      if (!canSave){alert("Please save the order first"); return;}
+                                      navigator.clipboard.writeText(message).then(() => {
+                                        window.open("https://chat.whatsapp.com/GUZtwWJJE3UCPDccb4vqP6", "_blank");
+                                      });
+                                    }
+                            }
+            className={`px-2 py-1 rounded text-white transition-colors ${canSave ? "bg-green-600 hover:bg-green-700 cursor-pointer" : "bg-gray-400 cursor-not-allowed"}`}
+          >
+          {/* Send to WhatsApp Group (Message copied -&gt; Open Group -&gt; Paste in chat & Send) */}
+          WApp Group & Paste
+          </a>
                     <span className="text-xs font-bold text-gray-700">
                         Total Quantity {grandTotal}
                     </span>
@@ -395,7 +426,7 @@ export default function OrderPage() {
                                                 />
                                             </div>
                                         ))}
-                                        <span className="text-[15px] text-center font-medium text-gray-500 mb-0.5">Total<br />{getRowTotal(row.quantities)}</span>
+                                        <span className="px-2 text-[15px] text-center font-medium text-gray-500 mb-0.5">Total<br />{getRowTotal(row.quantities)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -483,7 +514,7 @@ export default function OrderPage() {
                                                 />
                                             </div>
                                         ))}
-                                        <span className="text-[15px] text-center font-medium text-gray-500 mb-0.5">Total<br />{getRowTotal(row.quantities)}</span>
+                                        <span className="px-2 text-[15px] text-center font-medium text-gray-500 mb-0.5">Total<br />{getRowTotal(row.quantities)}</span>
                                     </div>
                                 </div>
                             </div>

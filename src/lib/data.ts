@@ -52,7 +52,8 @@ export async function getOrderbyId(orderId: string){
 export async function searchProducts(query: string) {
    const { data, error } = await supabase
     .from("products_base")
-    .select("id, base_name")
+    // .select("id, base_name")
+   .select("id, base_name, base_name_nick") 
     .ilike("base_name", `%${query}%`)
     .limit(20);
   if (error) throw new Error(error.message);
