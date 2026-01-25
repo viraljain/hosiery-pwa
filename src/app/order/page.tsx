@@ -162,11 +162,11 @@ export default function OrderPage() {
 
         return () => clearTimeout(timer);
     }, [adultProductQuery, kidsProductQuery]);
-
+const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
     // ── UI & Save logic ─────────────────────────────────────────────────
     const canSave = useMemo(() => {
         if (!selectedDealer?.id) return false;
-
+        if(canWhatsApp) return false;
         const hasValidAdult = adultItems.some(
             (i) => i.base_id && Object.values(i.quantities).some((q) => q > 0)
         );
@@ -175,7 +175,8 @@ export default function OrderPage() {
         );
 
         return hasValidAdult || hasValidKids;
-    }, [adultItems, kidsItems, selectedDealer]);
+    }, [adultItems, kidsItems, selectedDealer, canWhatsApp]);
+    
 
     const [message, setMessage] = useState<string>('');
     const saveOrder = async () => {
@@ -218,8 +219,14 @@ export default function OrderPage() {
         .toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); // capitalize first letters
 
         setMessage(message1);
+        setCanWhatsApp(true);
+        
+        alert("Order saved successfully"+"\n\n"+message1);
 
-        // await navigator.clipboard.writeText(message);
+        // navigator.clipboard.writeText(message).then(() => { 
+        //     const url = `https://chat.whatsapp.com/GUZtwWJJE3UCPDccb4vqP6`;
+        //     window.open(url, "_blank");
+        //  });
 
         // const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
         // const url = `https://chat.whatsapp.com/GUZtwWJJE3UCPDccb4vqP6`;
@@ -277,20 +284,23 @@ export default function OrderPage() {
                     </button>
                     <button onClick={(e)=> {
                             e.preventDefault();
-                            navigator.clipboard.writeText(message); 
+                            navigator.clipboard.writeText(message).then(() => {
+                                const url = `https://chat.whatsapp.com/GUZtwWJJE3UCPDccb4vqP6`;
+                                window.open(url, "_blank");
+                            }); 
                             alert("Order message copied to clipboard! "+message);
-                            const url = `https://chat.whatsapp.com/GUZtwWJJE3UCPDccb4vqP6`;
-                            window.open(url, "_blank");
+                            // const url = `https://chat.whatsapp.com/GUZtwWJJE3UCPDccb4vqP6`;
+                            // window.open(url, "_blank");
                     }}
-                    disabled={!canSave}
+                    disabled={!canWhatsApp}
                     className={`px-3 py-1 rounded-lg font-medium text-white shadow-sm transition-colors
-                                    ${canSave ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
+                                    ${canWhatsApp ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
                                 : "bg-gray-400 cursor-not-allowed"
                             }`}
                     >
                         WApp
                     </button>
-                     <a href="#"
+                     {/* <a href="#"
                       onClick={(e) => 
                                     {
                                       e.preventDefault();
@@ -301,17 +311,17 @@ export default function OrderPage() {
                                     }
                             }
             className={`px-2 py-1 rounded text-white transition-colors ${canSave ? "bg-green-600 hover:bg-green-700 cursor-pointer" : "bg-gray-400 cursor-not-allowed"}`}
-          >
+          > */}
           {/* Send to WhatsApp Group (Message copied -&gt; Open Group -&gt; Paste in chat & Send) */}
-          WApp Group & Paste
-          </a>
-                    <span className="text-xs font-bold text-gray-700">
-                        Total Quantity {grandTotal}
+          {/* WApp Group & Paste */}
+          {/* </a> */}
+                    <span className="bg-green-300 inline-block min-w-[100px] text-xl text-center font-bold text-gray-700">
+                        Total {grandTotal}
                     </span>
                 </div>
 
                 {/* DEALER SECTION */}
-                <div className="mb-2 bg-white shadow rounded-xl p-2 pl-4 pt-0.25 border-gray-200 focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]">
+                <div className="mb-2 bg-sky-300 shadow rounded-xl p-2 pl-4 pt-0.25 border-gray-200 focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]">
                     <label className="block text-md font-medium text-gray-700 mb-0.5">
                         Dealer
                     </label>
@@ -322,7 +332,7 @@ export default function OrderPage() {
                             setDealerQuery(e.target.value);
                         }}
                         placeholder="Search dealer (min 3 characters)..."
-                        className="w-full md:w-96 px-2 py-1 border border-gray-300 rounded-lg 
+                        className="w-full bg-white md:w-96 px-2 py-1 border border-gray-300 rounded-lg 
                                     focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none "
                     />
                     {selectedDealer ? null :
@@ -346,7 +356,7 @@ export default function OrderPage() {
                 <div className="space-y-1">
                     {/* ── ADULTS ──────────────────────────────────────────────── 
                     mb-2 bg-white shadow rounded-xl p-2 pl-4 pt-0.25 border-gray-200 focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]*/}
-                    <section className="bg-white shadow rounded-xl p-0.5 border border-gray-200">
+                    <section className="bg-orange-500 shadow rounded-xl p-0.5 border border-gray-200">
                         <div className="flex items-center pl-2 mb-0.5 p-0.5 justify-between">
                             <h2 className="text-md font-semibold ">Gents / Ladies</h2>
                             <button
@@ -434,7 +444,7 @@ export default function OrderPage() {
                     </section>
 
                     {/* ── KIDS ────────────────────────────────────────────────── */}
-                    <section className="bg-white shadow rounded-xl p-0.5 border border-gray-200">
+                    <section className="bg-green-300 shadow rounded-xl p-0.5 border border-gray-200">
                         <div className="flex items-center pl-2 mb-0.5 p-0.5 justify-between">
                             <h2 className="text-md font-semibold ">Kids</h2>
                             <button
