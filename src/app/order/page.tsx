@@ -26,6 +26,8 @@ export default function OrderPage() {
     const [kidsProductQuery, setKidsProductQuery] = useState<string[]>([""]);
     const [kidsProductOptions, setKidsProductOptions] = useState<Product[][]>([[]]);
 
+    const [narration, setNarration] = useState<string>('');
+
     const debounceRef = useRef<number | null>(null);
 
     // ── Helper functions ────────────────────────────────────────────────
@@ -198,6 +200,7 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                     Object.entries(i.quantities).filter(([, q]) => Number(q) > 0)
                 ),
             })),
+            narration
         };
         const res = await fetch("/api/orders", {
             method: "POST",
@@ -215,6 +218,7 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
             orderId: data.order_id,
             dealerName: selectedDealer.name,
             adultItems: adultItems, kidsItems: kidsItems,
+            narration: narration,
         }).replaceAll(/MAESTRO/gi, "M.").replaceAll(/DIVYA/gi, "D.").replaceAll(/PLATINUM/gi, "P.").replaceAll(/RN/gi, "RN").replaceAll(/RNS/gi, "RNS")
         .toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); // capitalize first letters
 
@@ -242,8 +246,8 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
         // setKidsProductQuery([""]);
         // setKidsProductOptions([[]]);
     };
-    function buildWhatsAppMessage({orderId,dealerName,adultItems,kidsItems,}
-        : {orderId: string;dealerName?: string;adultItems: ItemRow[];kidsItems: ItemRow[];}) 
+    function buildWhatsAppMessage({orderId,dealerName,adultItems,kidsItems, narration}
+        : {orderId: string;dealerName?: string;adultItems: ItemRow[];kidsItems: ItemRow[]; narration?: string}) 
     {
         const header = [dealerName ? `${dealerName}` : null].filter(Boolean).join("\n");
 
@@ -265,7 +269,7 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                     .join(", ");
                 return `${(i.product_name_nick??"").length > 0 ? i.product_name_nick : i.product_name}: ${qtys || "—"}`;
             });
-        return `${header}\n${adultItemsLines.join("\n")}\n${kidsItemsLines.join("\n")}`;
+        return `${header}\n${adultItemsLines.join("\n")}\n${kidsItemsLines.join("\n")}\n${narration ? 'Note: ' + narration : ''}`;
     }
 
     return (
@@ -321,7 +325,7 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                 </div>
 
                 {/* DEALER SECTION */}
-                <div className="mb-2 bg-sky-300 shadow rounded-xl p-2 pl-4 pt-0.25 border-gray-200 focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]">
+                <div className="mb-2 bg-sky-300 shadow rounded-xl p-2 pl-2 pt-0.25 border-gray-200 focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]">
                     <label className="block text-md font-medium text-gray-700 mb-0.5">
                         Dealer
                     </label>
@@ -351,7 +355,13 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                             </div>
                         )}
                 </div>
-
+                {/* <div className="bg-red-300 shadow rounded-xl  border-gray-200 focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]"> */}
+                    <textarea value={narration} onChange={(e) => setNarration(e.target.value)} 
+                    placeholder="Scheme/Payment/Adv Material or any other instructions..."
+                    className="w-full bg-white md:w-96 px-1 py-1 border border-gray-300 rounded-lg 
+                                focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none "
+                    />
+                {/* </div> */}
                 {/* PRODUCTS SECTIONS */}
                 <div className="space-y-1">
                     {/* ── ADULTS ──────────────────────────────────────────────── 

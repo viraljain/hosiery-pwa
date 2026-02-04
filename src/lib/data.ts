@@ -21,7 +21,7 @@ export async function createMatrixOrder(payload: {
     base_id: string;
     quantities: Record<string, number>;
     salesperson: string;
-    notes?: string; 
+    narration?: string; 
 }){
     return supabase
     .from('orders_matrix')
@@ -30,7 +30,7 @@ export async function createMatrixOrder(payload: {
         base_id: payload.base_id,
         quantities: payload.quantities,
         salesperson: payload.salesperson,
-        notes: payload.notes || null
+        narration: payload.narration || null
     })
     .select('id, created_at')
     .single();
@@ -38,13 +38,13 @@ export async function createMatrixOrder(payload: {
 
 export async function getOrdersMatrix(){
     return supabase.from('orders_matrix')
-    .select('id, dealer: dealer_id(id, name, city), base:base_id(id, base_name, category), quantities, salesperson, notes, created_at')
+    .select('id, dealer: dealer_id(id, name, city), base:base_id(id, base_name, category), quantities, salesperson, narration, created_at')
     .order('created_at', {ascending: false});
 }
 
 export async function getOrderbyId(orderId: string){
     return supabase.from('orders_matrix')
-    .select('id, dealer: dealer_id(id, name), base:base_id(id, base_name, category), quantities, salesperson, notes, created_at')
+    .select('id, dealer: dealer_id(id, name, city), base:base_id(id, base_name, category), quantities, salesperson, narration, created_at')
     .eq('id', orderId)
     .order('created_at', {ascending: false});
 }

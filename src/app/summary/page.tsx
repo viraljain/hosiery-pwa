@@ -81,6 +81,7 @@ export default function SummaryPage() {
           dealer: o.dealer,
           created_at: o.created_at,
           items: [],
+          narration: o.narration,
           total_qty: 0,
         };
       }
@@ -200,6 +201,7 @@ export default function SummaryPage() {
               <th className="text-center p-0.5">Dealer</th>
               <th className="text-center p-0.5">Date</th>
               <th className="text-center p-0.5">Total</th>
+              {/* <th className="text-center p-0.5">Narration</th> */}
               <th className="text-center p-0.5">Actions</th>
             </tr>
           </thead>
@@ -209,6 +211,7 @@ export default function SummaryPage() {
                 <td className="p-0.5">{g.dealer?.name} ({g.dealer?.city})</td>
                 <td className="p-0.5">{new Date(g.created_at).toLocaleString()}</td>
                 <td className="p-0.5 text-right">{g.total_qty}</td>
+                {/* <td className="p-0.5">{g.narration || '-'}</td> */}
                 <td className="p-0.5 text-center">
                   <button
                     className="text-blue-600 hover:underline"
@@ -264,6 +267,9 @@ export default function SummaryPage() {
             <h2 className="text-lg font-semibold mb-4">
               Order Details for {selectedOrder.dealer?.name} on {new Date(selectedOrder.created_at).toLocaleString()}
             </h2>
+            <div className="mb-4 font-medium">Narration:
+            {selectedOrder.narration}
+            </div>
 
             {/* Adult section */}
             {adultItems.length > 0 && (
