@@ -7,7 +7,7 @@ import clipboardy from "clipboardy";
 
 type Dealer = { id: string; name: string; phone?: string };
 type Product = { id: string; base_name: string; base_name_nick?: string };
-type ItemRow = { base_id?: string; product_name?: string; product_name_nick?: string; quantities: Record<string, number> };
+type ItemRow = { base_id?: string; product_name?: string; product_name_nick?: string; quantities: Record<string, number>; price?: number };
 
 // const ADULT_SIZES = ["75/78", "80", "85", "90", "95", "100", "105", "110", "120"];
 const ADULT_SIZES = ["77", "80", "85", "90", "95", "100", "105", "110", "120"];
@@ -54,6 +54,18 @@ export default function OrderPage() {
             setKidsProductOptions((prev) => prev.filter((_, i) => i !== idx));
         }
     };
+    const setPrice = (category: "adult" | "kids", idx: number, val: string) => {
+        const v = Number(val) || 0;
+        const setter = category === "adult" ? setAdultItems : setKidsItems;
+
+        setter((prev) => {
+            const next = [...prev];
+            next[idx] = {
+                ...next[idx],
+                price: v,
+            };
+            return next;
+        })  };
 
     const setQty = (category: "adult" | "kids", idx: number, size: string, val: string) => {
         const v = Number(val) || 0;
@@ -196,6 +208,7 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
             dealer_id: selectedDealer.id,
             items: items.map(i => ({
                 base_id: i.base_id,
+                price: i.price,
                 quantities: Object.fromEntries(
                     Object.entries(i.quantities).filter(([, q]) => Number(q) > 0)
                 ),
@@ -207,6 +220,7 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
         });
+        // alert("Saving order..." + JSON.stringify(payload));
         const data = await res.json();
         if (!res.ok) {
             alert(`Error: ${data.error || "Failed to save"}`);
@@ -218,7 +232,7 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
             orderId: data.order_id,
             dealerName: selectedDealer.name,
             adultItems: adultItems, kidsItems: kidsItems,
-            narration: narration,
+            narration: narration
         }).replaceAll(/MAESTRO/gi, "M.").replaceAll(/DIVYA/gi, "D.").replaceAll(/PLATINUM/gi, "P.").replaceAll(/RN/gi, "RN").replaceAll(/RNS/gi, "RNS")
         .toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); // capitalize first letters
 
@@ -258,7 +272,7 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                     .filter(([, q]) => Number(q) > 0)
                     .map(([s, q]) => `${s}/${q}`)
                     .join(", ");
-                return `${(i.product_name_nick??"").length > 0 ? i.product_name_nick : i.product_name}: ${qtys || "—"}`;
+                return `${(i.product_name_nick??"").length > 0 ? i.product_name_nick : i.product_name}${Number(i.price)>0?"("+(i.price)+")":""}: ${qtys || "—"}`;
             });
         const kidsItemsLines = kidsItems
             .filter(i => i.product_name)
@@ -267,7 +281,7 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                     .filter(([, q]) => Number(q) > 0)
                     .map(([s, q]) => `${s}/${q}`)
                     .join(", ");
-                return `${(i.product_name_nick??"").length > 0 ? i.product_name_nick : i.product_name}: ${qtys || "—"}`;
+                return `${(i.product_name_nick??"").length > 0 ? i.product_name_nick : i.product_name}${Number(i.price)>0?"("+(i.price)+")":""}: ${qtys || "—"}`;
             });
         return `${header}\n${adultItemsLines.join("\n")}\n${kidsItemsLines.join("\n")}\n${narration ? 'Note: ' + narration : ''}`;
     }
@@ -412,6 +426,13 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                                             className="flex-1 px-4 py-.5 border border-gray-300 rounded-lg 
                                focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none "
                                         />
+
+                                        <input type="number" value={row.price ?? ""}
+                                                    onChange={(e) => setPrice("adult", idx, e.target.value)}
+                                                    className="w-auto max-w-[33px] text-center
+                                                                border border-gray-300 rounded-md
+                                                                focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                                />
                                     </div>
                                     <div className="mt-0 p-0">
                                         {!row.base_id && adultProductOptions[idx]?.length > 0 && (
@@ -500,6 +521,12 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                                             className="flex-1 px-4 py-.5 border border-gray-300 rounded-lg 
                                focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none "
                                         />
+                                        <input type="number" value={row.price ?? ""}
+                                                    onChange={(e) => setPrice("kids", idx, e.target.value)}
+                                                    className="w-auto max-w-[33px] text-center
+                                                                border border-gray-300 rounded-md
+                                                                focus:ring-1 focus:ring-blue-400 focus:border-blue-500 focus:bg-cyan-200"
+                                                />
                                     </div>
                                     <div className="mt-0 p-0">
                                         {!row.base_id && kidsProductOptions[idx]?.length > 0 && (

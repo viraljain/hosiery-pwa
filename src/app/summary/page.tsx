@@ -88,6 +88,7 @@ export default function SummaryPage() {
       groupMap[key].items.push({
         base: o.base,
         quantities: o.quantities,
+        price: o.price,
       });
       // Add to total qty
       const itemQty = Object.values(o.quantities || {}).reduce((sum: number, q: any) => sum + (Number(q) || 0), 0);
@@ -135,7 +136,7 @@ export default function SummaryPage() {
   }, [selectedOrder]);
 
   return (
-    <div className="p-2 space-y-4 max-w-3xl mx-auto dark:text-white">
+    <div className="bg-gray-50 text-gray-800 p-2 space-y-4 max-w-3xl mx-auto">
       <div className="flex items-center justify-between">
       <h1 className="text-xl font-semibold">Order summary</h1>
       <div><label className="text-sm font-medium">Records per page</label>
@@ -153,18 +154,9 @@ export default function SummaryPage() {
         </select>
         </div>
         </div>
-
-      {/* <div className="space-y-2">
-        <label className="text-sm font-medium">Filter by dealer</label>
-        <select className="w-full border rounded p-2" value={dealerId} onChange={e => setDealerId(e.target.value)}>
-          <option value="">All dealers</option>
-          {dealers.map(d => <option key={d.id} value={d.id}>{d.name} ({d.city})</option>)}
-        </select>
-      </div> */}
-
       {/* DEALER SECTION */}
-      <div className="mb-2 bg-white dark:bg-gray-800 shadow rounded-xl p-2 pl-4 pt-0.25 border-gray-200 focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]">
-          <label className="block text-md font-medium text-gray-700 dark:text-white mb-0.5">
+      <div className="mb-2 bg-sky-300 shadow rounded-xl p-2 pl-2 pt-0.25 border-gray-200 focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]">
+          <label className="block text-md font-medium text-gray-700 mb-0.5">
               Dealer
           </label>
           <input
@@ -174,8 +166,8 @@ export default function SummaryPage() {
                   setDealerQuery(e.target.value);
               }}
               placeholder="Search dealer (min 3 characters)..."
-              className="w-full md:w-96 px-2 py-1 border border-gray-300 rounded-lg 
-                          focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none "
+              className="w-full bg-white md:w-96 px-2 py-1 border border-gray-300 rounded-lg 
+                        focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none "       
           />
           {selectedDealer ? null :
               (
@@ -196,30 +188,30 @@ export default function SummaryPage() {
 
       <div className="border rounded overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-100 dark:bg-gray-400">
+          <thead className="bg-gray-100">
             <tr>
-              <th className="text-center p-0.5">Dealer</th>
-              <th className="text-center p-0.5">Date</th>
-              <th className="text-center p-0.5">Total</th>
-              {/* <th className="text-center p-0.5">Narration</th> */}
-              <th className="text-center p-0.5">Actions</th>
+              <th className="text-center p-0.25">Dealer</th>
+              <th className="text-center p-0.25">Date</th>
+              <th className="text-center p-0.25">Total</th>
+              {/* <th className="text-center p-0.25">Narration</th> */}
+              {/* <th className="text-center p-0.25">Actions</th> */}
             </tr>
           </thead>
           <tbody>
             {paginatedGroups.map(g => (
-              <tr key={g.id} className="border-t">
-                <td className="p-0.5">{g.dealer?.name} ({g.dealer?.city})</td>
-                <td className="p-0.5">{new Date(g.created_at).toLocaleString()}</td>
-                <td className="p-0.5 text-right">{g.total_qty}</td>
+              <tr key={g.id} className="border-t" onClick={()=> setSelectedOrder(g)}>
+                <td className="p-0.25 pt-1 pb-1">{g.dealer?.name} ({g.dealer?.city})</td>
+                <td className="p-0.25">{new Date(g.created_at).toLocaleDateString("en-GB").replace("/20","/")}</td>
+                <td className="p-0.25 pl-0 pr-0.5 text-right">{g.total_qty}</td>
                 {/* <td className="p-0.5">{g.narration || '-'}</td> */}
-                <td className="p-0.5 text-center">
-                  <button
+                {/* <td className="p-0.5 text-center"> */}
+                  {/* <button
                     className="text-blue-600 hover:underline"
                     onClick={() => setSelectedOrder(g)}
                   >
                     View
-                  </button>
-                </td>
+                  </button> */}
+                {/* </td> */}
               </tr>
             ))}
           </tbody>
@@ -261,50 +253,42 @@ export default function SummaryPage() {
           onClick={() => setSelectedOrder(null)} // Close on outside click
         >
           <div
-            className="bg-white dark:bg-gray-500/93 p-6 rounded-lg shadow-lg max-w-4xl w-full max-h-[80vh] overflow-y-auto"
+            className="bg-white p-3 rounded-lg shadow-lg max-w-4xl w-full max-h-[80vh] overflow-y-auto"
             onClick={e => e.stopPropagation()} // Prevent close on inside click
           >
-            <h2 className="text-lg font-semibold mb-4">
-              Order Details for {selectedOrder.dealer?.name} on {new Date(selectedOrder.created_at).toLocaleString()}
-            </h2>
-            <div className="mb-4 font-medium">Narration:
+            <h3 className="text-md font-semibold mb-1">
+              {selectedOrder.dealer?.name} ({new Date(selectedOrder.created_at).toLocaleString()})
+            </h3>
+            <div className="mb-2 italic text-sm border-1 border-amber-500">Narration:&nbsp;
             {selectedOrder.narration}
             </div>
 
             {/* Adult section */}
             {adultItems.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-md font-medium mb-2">Gents/Ladies</h3>
+              <div className="mb-2">
+                <h3 className="text-md font-medium mb-0.25">GENTS/LADIES</h3>
                 {adultItems.map((item: any, idx: number) => {
                   const quantities = item.quantities || {};
                   const total = Object.values(quantities).reduce((sum: number, q: any) => sum + (Number(q) || 0), 0);
                   return (
-                    <div key={idx} className="mb-4">
-                      <div className="font-medium">{item.base?.base_name}</div>
-                      {/* <div className="flex gap-2 mt-1"> */}
+                    <div key={idx} className="mb-2">
+                      <div className="text-sm">{item.base?.base_name} {item.price>0 && `(${item.price})`}</div>
                       <table><tbody>
                         <tr className='border'>
                         {ADULT_SIZES.map(size => (
-                          // <div key={size} className="w-12 text-center text-sm font-medium">
-                          //   {size}
-                          // </div>
                           <td key={size} className="w-12 text-center text-sm font-medium border">{size}</td>
                         ))}
-                        {/* <div className="w-12 text-center text-sm font-medium">Total</div> */}
                         <td className="w-12 text-center text-sm font-medium">Total</td>
                       </tr>
-                      {/* <div className="flex gap-2 mt-1"> */}
                       <tr className='border'>  
                         {ADULT_SIZES.map(size => (
-                          // <div key={size} className="w-12 text-center">
-                          <td key={size} className="w-12 text-center border">
+                      
+                          <td key={size} className="w-12 text-center border p-0">
                             {quantities[size] || 0}
-                          {/* </div> */}
+                      
                           </td>
-                        ))}
-                        {/* <div className="w-12 text-center">{total}</div> */}
-                        <td className="w-12 text-center">{total}</td>
-                      {/* </div> */}
+                        ))}                      
+                        <td className="w-12 text-center p-0">{total}</td>
                       </tr>
                       </tbody></table>
                     </div>
@@ -315,40 +299,31 @@ export default function SummaryPage() {
 
             {/* Kids section */}
             {kidsItems.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-md font-medium mb-2">Kids</h3>
+              <div className="mb-2">
+                <h3 className="text-md font-medium mb-0.25">Kids</h3>
                 {kidsItems.map((item: any, idx: number) => {
                   const quantities = item.quantities || {};
                   const total = Object.values(quantities).reduce((sum: number, q: any) => sum + (Number(q) || 0), 0);
                   return (
-                    <div key={idx} className="mb-4">
-                      <div className="font-medium">{item.base?.base_name}</div>
+                    <div key={idx} className="mb-2">
+                      <div className="text-sm">{item.base?.base_name} {item.price>0 && `(${item.price})`}</div>
                       {/* <div className="flex gap-2 mt-1"> */}
                       <table><tbody>
                         <tr className='border'>
                         {KIDS_SIZES.map(size => (
-                          // <div key={size} className="w-12 text-center text-sm font-medium">
                           <td key={size} className="w-12 text-center text-sm font-medium border">
                             {size}
-                          {/* </div> */}
                           </td>
                         ))}
-                        {/* <div className="w-12 text-center text-sm font-medium">Total</div> */}
                         <td className="w-12 text-center text-sm font-medium">Total</td>
-                      {/* </div> */}
                       </tr>
-                      {/* <div className="flex gap-2 mt-1"> */}
                       <tr className='border'>
-                        {KIDS_SIZES.map(size => (
-                          // <div key={size} className="w-12 text-center">
-                          <td key={size} className="w-12 text-center border">
+                        {KIDS_SIZES.map(size => (                      
+                          <td key={size} className="w-12 text-center border p-0">
                             {quantities[size] || 0}
-                          {/* </div> */}
                           </td>
                         ))}
-                        {/* <div className="w-12 text-center">{total}</div> */}
-                        <td className="w-12 text-center">{total}</td>
-                      {/* </div> */}
+                        <td className="w-12 text-center p-0">{total}</td>
                       </tr>
                       </tbody></table>
                     </div>
