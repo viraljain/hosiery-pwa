@@ -30,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a href="/" className="inline-block bg-blue-600 text-white px-2 py-1 xl:px-4 xl:py-2 rounded hover:bg-blue-700" > Home </a>
         <a href="/order" className="inline-block bg-blue-600 text-white px-2 py-1 xl:px-4 xl:py-2 rounded hover:bg-blue-700" > Order </a>
         <a href="/summary" className="inline-block bg-blue-600 text-white px-2 py-1 xl:px-4 xl:py-2 rounded hover:bg-blue-700" > Summary </a>
+        <a href="/admin" className="inline-block bg-blue-600 text-white px-2 py-1 xl:px-4 xl:py-2 rounded hover:bg-blue-700" > Admin </a>
         {children}
       </body>
     </html>

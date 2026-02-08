@@ -1,7 +1,7 @@
 // app/summary/page.tsx
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getDealers, getOrdersMatrix, getSkusByProductBase, searchDealers } from '@/lib/data';
+import { getDealers, getOrdersMatrix, getSkusByProductBase, searchDealers, deleteOrderMatrix } from '@/lib/data';
 
 type Dealer = { id: string; name: string; phone?: string };
 
@@ -20,8 +20,9 @@ export default function SummaryPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [groups, setGroups] = useState<any[]>([]); // Grouped orders
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null); // For modal
-  const [pageSize, setPageSize] = useState(10); // Customizable page size
+  const [pageSize, setPageSize] = useState(15); // Customizable page size
   const [currentPage, setCurrentPage] = useState(0); // Current page index
+  const [refreshKey, setRefreshKey] = useState(0); // To trigger re-fetch after deletion  
 
   const debounceRef = useRef<number | null>(null);
 
@@ -44,30 +45,45 @@ export default function SummaryPage() {
       const list = (data ?? []).filter((o: any) => !selectedDealer || o.dealer?.id === selectedDealer.id);
       setOrders(list);
     });
-  }, [selectedDealer]);
+  }, [selectedDealer, refreshKey]);
 
-      // ── Debounced searches ──────────────────────────────────────────────
-      useEffect(() => {
+  // ── Debounced searches ──────────────────────────────────────────────
+  useEffect(() => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+
+      debounceRef.current = window.setTimeout(async () => {
+          if (dealerQuery.trim().length < 3) {
+              setDealerOptions([]);
+              return;
+          }
+          try {
+              const res = await searchDealers(dealerQuery.trim());
+              setDealerOptions(res ?? []);
+          } catch {
+              setDealerOptions([]);
+          }
+      }, 300);
+
+      return () => {
           if (debounceRef.current) clearTimeout(debounceRef.current);
-  
-          debounceRef.current = window.setTimeout(async () => {
-              if (dealerQuery.trim().length < 3) {
-                  setDealerOptions([]);
-                  return;
-              }
-              try {
-                  const res = await searchDealers(dealerQuery.trim());
-                  setDealerOptions(res ?? []);
-              } catch {
-                  setDealerOptions([]);
-              }
-          }, 300);
-  
-          return () => {
-              if (debounceRef.current) clearTimeout(debounceRef.current);
-          };
-      }, [dealerQuery]);
-  
+      };
+  }, [dealerQuery]);
+
+  // NEW: Delete handler
+  const handleDeleteOrder = async () => {
+    if (!selectedOrder) return;
+    if (!confirm('Are you sure you want to delete this order of '+selectedOrder.dealer?.name + ' (' + new Date(selectedOrder.created_at).toLocaleDateString("en-GB").replace("/20","/") +')?')) return;
+
+    try {
+      await deleteOrderMatrix(selectedOrder.order_id);
+      setRefreshKey(prev=> prev + 1);           // refresh list
+      // setIsModalOpen(false);
+      setSelectedOrder(null);
+      alert('Order of '+selectedOrder.dealer?.name + ' (' + new Date(selectedOrder.created_at).toLocaleDateString("en-GB").replace("/20","/") +')' +') deleted successfully');
+    } catch (err: any) {
+      alert('Delete failed: ' + err.message);
+    }
+  };
 
   // Group orders into logical "orders" based on dealer and created_at
   // Assuming items from the same API post share dealer and created_at
@@ -78,6 +94,7 @@ export default function SummaryPage() {
       if (!groupMap[key]) {
         groupMap[key] = {
           id: key, // Unique key for the group
+          order_id: o.order_id, // Keep original order_id for reference
           dealer: o.dealer,
           created_at: o.created_at,
           items: [],
@@ -100,17 +117,6 @@ export default function SummaryPage() {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
     setGroups(sortedGroups);
-  }, [orders]);
-
-  // Compute totals by base across all filtered orders
-  const totalsByBase = useMemo(() => {
-    const agg: Record<string, number> = {};
-    orders.forEach((o: any) => {
-      const baseName = o.base?.base_name;
-      const itemQty = Object.values(o.quantities || {}).reduce((sum: number, q: any) => sum + (Number(q) || 0), 0);
-      agg[baseName] = (agg[baseName] ?? 0) + itemQty;
-    });
-    return agg;
   }, [orders]);
 
   // Paginate the groups
@@ -148,8 +154,8 @@ export default function SummaryPage() {
             setCurrentPage(0); // Reset to first page
           }}
         >
-          <option value={10}>10</option>
-          <option value={20}>20</option>
+          <option value={10}>15</option>
+          <option value={20}>25</option>
           <option value={50}>50</option>
         </select>
         </div>
@@ -235,15 +241,6 @@ export default function SummaryPage() {
         >
           Next
         </button>
-      </div>
-
-      <div>
-        <h2 className="text-lg font-medium">Totals by product</h2>
-        <ul className="list-disc pl-6">
-          {Object.entries(totalsByBase).map(([name, qty]) => (
-            <li key={name}>{name}: {qty}</li>
-          ))}
-        </ul>
       </div>
 
       {/* Modal overlay for order details */}
@@ -333,6 +330,12 @@ export default function SummaryPage() {
             )}
 
             <div className="text-right">
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded"
+                onClick={handleDeleteOrder}
+              >
+                🗑️ Delete Order
+              </button>
               <button
                 className="px-4 py-2 bg-blue-600 text-white rounded"
                 onClick={() => setSelectedOrder(null)}
