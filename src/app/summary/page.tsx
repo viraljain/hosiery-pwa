@@ -9,6 +9,7 @@ type Dealer = { id: string; name: string; phone?: string };
 const ADULT_SIZES = ["77", "80", "85", "90", "95", "100", "105", "110", "120"];
 const KIDS_SIZES = ["35", "40", "45", "50", "55", "60", "65", "70", "75"];
 
+
 export default function SummaryPage() {
   // const [dealers, setDealers] = useState<any[]>([]);
   // const [dealerId, setDealerId] = useState('');
@@ -38,6 +39,28 @@ export default function SummaryPage() {
   //     setOrders(list);
   //   });
   // }, [dealerId]);
+
+  // EXPORT ORDER TO SGM
+  // const [status, setStatus] = useState('');
+
+  async function exportOrder(orderId: string) {
+    // setStatus('Exporting...');
+    const res = await fetch('/api/exportorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId })
+    });
+
+    const data = await res.json();
+    console.log('Export response:', data);
+
+    if (res.ok) {
+      alert(data.message || 'Order exported successfully');
+    } else {
+      alert(data.error || 'Order export failed');
+    }
+    // setStatus(data.message || data.error);
+  }
 
     // Fetch and filter orders when dealerId changes
   useEffect(() => {
@@ -200,7 +223,7 @@ export default function SummaryPage() {
               <th className="text-center p-0.25">Date</th>
               <th className="text-center p-0.25">Total</th>
               {/* <th className="text-center p-0.25">Narration</th> */}
-              {/* <th className="text-center p-0.25">Actions</th> */}
+              <th className="text-center p-0.25">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -210,14 +233,18 @@ export default function SummaryPage() {
                 <td className="p-0.25">{new Date(g.created_at).toLocaleDateString("en-GB").replace("/20","/")}</td>
                 <td className="p-0.25 pl-0 pr-0.5 text-right">{g.total_qty}</td>
                 {/* <td className="p-0.5">{g.narration || '-'}</td> */}
-                {/* <td className="p-0.5 text-center"> */}
-                  {/* <button
+                <td className="p-0.5 text-center">
+                  <button
                     className="text-blue-600 hover:underline"
-                    onClick={() => setSelectedOrder(g)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // alert(g.order_id);
+                      exportOrder(g.order_id);
+                    }}
                   >
-                    View
-                  </button> */}
-                {/* </td> */}
+                    ExpORD
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -261,7 +288,7 @@ export default function SummaryPage() {
             </div>
 
             {/* Adult section */}
-            {adultItems.length > 0 && (
+            {/* {adultItems.length > 0 && (
               <div className="mb-2">
                 <h3 className="text-md font-medium mb-0.25">GENTS/LADIES</h3>
                 {adultItems.map((item: any, idx: number) => {
@@ -273,19 +300,55 @@ export default function SummaryPage() {
                       <table><tbody>
                         <tr className='border'>
                         {ADULT_SIZES.map(size => (
-                          <td key={size} className="w-12 text-center text-sm font-medium border">{size}</td>
+                          <td key={size} className="w-8 text-center text-sm font-medium border">{size}</td>
                         ))}
-                        <td className="w-12 text-center text-sm font-medium">Total</td>
+                        <td className="w-8 text-center text-sm font-medium">Total</td>
                       </tr>
                       <tr className='border'>  
                         {ADULT_SIZES.map(size => (
                       
-                          <td key={size} className="w-12 text-center border p-0">
-                            {quantities[size] || 0}
+                          <td key={size} className="w-8 text-center border p-0">
+                            {quantities[size] || '-'}
                       
                           </td>
                         ))}                      
-                        <td className="w-12 text-center p-0">{total}</td>
+                        <td className="w-8 text-center p-0">{total}</td>
+                      </tr>
+                      </tbody></table>
+                    </div>
+                  );
+                })}
+              </div>
+            )} */}
+            
+            {/* Adult section */}
+            {adultItems.length > 0 && (
+              <div className="mb-2">
+                <h3 className="text-md font-medium mb-0.25">GENTS/LADIES</h3>
+                <table><tbody>
+                <tr className='border'>
+                        <td className="w-21 text-center text-xs font-medium border">Product Name</td>
+                        {ADULT_SIZES.map(size => (
+                          <td key={size} className="w-8 text-center text-xs font-medium border p-0">{size}</td>
+                        ))}
+                        <td className="w-8 text-center text-xs font-medium border p-0">Total</td>
+                      </tr>
+                  </tbody></table>
+                {adultItems.map((item: any, idx: number) => {
+                  const quantities = item.quantities || {};
+                  const total = Object.values(quantities).reduce((sum: number, q: any) => sum + (Number(q) || 0), 0);
+                  return (
+                    <div key={idx} className="mb-0">
+                      {/* <div className="text-sm">{item.base?.base_name} {item.price>0 && `(${item.price})`}</div> */}
+                      <table><tbody>                        
+                      <tr className='border'>  
+                        <td className="w-21 text-left text-xs font-medium border p-0">{item.base?.base_name_nick?.toLowerCase().replace('maestro', '').replace('divya', '')} {item.price>0 && `(${item.price})`}</td>
+                        {ADULT_SIZES.map(size => (                          
+                          <td key={size} className="w-8 text-center border p-0">
+                            {quantities[size] || '-'}                      
+                          </td>
+                        ))}                      
+                        <td className="w-8 text-center p-0">{total}</td>
                       </tr>
                       </tbody></table>
                     </div>
@@ -295,7 +358,7 @@ export default function SummaryPage() {
             )}
 
             {/* Kids section */}
-            {kidsItems.length > 0 && (
+            {/* {kidsItems.length > 0 && (
               <div className="mb-2">
                 <h3 className="text-md font-medium mb-0.25">Kids</h3>
                 {kidsItems.map((item: any, idx: number) => {
@@ -303,8 +366,7 @@ export default function SummaryPage() {
                   const total = Object.values(quantities).reduce((sum: number, q: any) => sum + (Number(q) || 0), 0);
                   return (
                     <div key={idx} className="mb-2">
-                      <div className="text-sm">{item.base?.base_name} {item.price>0 && `(${item.price})`}</div>
-                      {/* <div className="flex gap-2 mt-1"> */}
+                      <div className="text-sm">{item.base?.base_name} {item.price>0 && `(${item.price})`}</div>                      
                       <table><tbody>
                         <tr className='border'>
                         {KIDS_SIZES.map(size => (
@@ -317,10 +379,44 @@ export default function SummaryPage() {
                       <tr className='border'>
                         {KIDS_SIZES.map(size => (                      
                           <td key={size} className="w-12 text-center border p-0">
-                            {quantities[size] || 0}
+                            {quantities[size] || '-'}
                           </td>
                         ))}
                         <td className="w-12 text-center p-0">{total}</td>
+                      </tr>
+                      </tbody></table>
+                    </div>
+                  );
+                })}
+              </div>
+            )} */}
+            {kidsItems.length > 0 && (
+              <div className="mb-2">
+                <h3 className="text-md font-medium mb-0.25">Kids</h3>
+                <table><tbody>
+                <tr className='border'>
+                        <td className="w-21 text-center text-xs font-medium border">Product Name</td>
+                        {KIDS_SIZES.map(size => (
+                          <td key={size} className="w-8 text-center text-xs font-medium border p-0">{size}</td>
+                        ))}
+                        <td className="w-8 text-center text-xs font-medium border p-0">Total</td>
+                      </tr>
+                  </tbody></table>
+                {kidsItems.map((item: any, idx: number) => {
+                  const quantities = item.quantities || {};
+                  const total = Object.values(quantities).reduce((sum: number, q: any) => sum + (Number(q) || 0), 0);
+                  return (
+                    <div key={idx} className="mb-0">
+                      {/* <div className="text-sm">{item.base?.base_name} {item.price>0 && `(${item.price})`}</div> */}
+                    <table><tbody>                          
+                      <tr className='border'>  
+                        <td className="w-21 text-left text-xs font-medium border p-0">{item.base?.base_name_nick?.toLowerCase().replace('maestro', '').replace('divya', '')} {item.price>0 && `(${item.price})`}</td>
+                        {KIDS_SIZES.map(size => (                          
+                          <td key={size} className="w-8 text-center border p-0">
+                            {quantities[size] || '-'}                      
+                          </td>
+                        ))}                      
+                        <td className="w-8 text-center p-0">{total}</td>
                       </tr>
                       </tbody></table>
                     </div>
