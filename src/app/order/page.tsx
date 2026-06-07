@@ -402,7 +402,7 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                                     <div className="flex gap-0.25 min-w-0 mb-0">
                                         <button
                                             onClick={() => {
-                                                if (window.confirm(`Remove this product (${row.product_name || "unsaved"})?`)) {
+                                                if (window.confirm(`Remove this product -${row.product_name || ""}?`)) {
                                                     removeRow("adult", idx);
                                                 }
                                             }}
@@ -497,7 +497,7 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                                     <div className="flex gap-0.25 min-w-0 mb-0">
                                         <button
                                             onClick={() => {
-                                                if (window.confirm(`Remove this product (${row.product_name || "unsaved"})?`)) {
+                                                if (window.confirm(`Remove this product-${row.product_name || ""}?`)) {
                                                     removeRow("kids", idx);
                                                 }
                                             }}
