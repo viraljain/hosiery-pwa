@@ -63,7 +63,7 @@ export async function searchProducts(query: string) {
 export async function searchDealers(query: string) {
     const { data, error } = await supabase
         .from("dealers")
-        .select("id, name, phone")
+        .select("id, name, phone, city")
         .ilike("name", `%${query}%`)
         .limit(20);
     if (error) throw new Error(error.message);

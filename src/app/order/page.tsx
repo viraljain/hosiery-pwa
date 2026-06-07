@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { searchProducts, searchDealers } from "@/lib/data";
 import clipboardy from "clipboardy";
 
-type Dealer = { id: string; name: string; phone?: string };
+type Dealer = { id: string; name: string; phone?: string, city?: string };
 type Product = { id: string; base_name: string; base_name_nick?: string };
 type ItemRow = { base_id?: string; product_name?: string; product_name_nick?: string; quantities: Record<string, number>; price?: number };
 
@@ -350,7 +350,7 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                             setDealerQuery(e.target.value);
                         }}
                         placeholder="Search dealer (min 3 characters)..."
-                        className="w-full text-[18px] bg-white px-1 py-0 leading-relaxed border border-gray-300 rounded-lg 
+                        className="w-full bg-sky-200 text-[18px] px-1 py-0 leading-relaxed border border-gray-300 rounded-lg 
                                     focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none 
                                     font-semibold not-placeholder-shown:bg-teal-100"
                     />
@@ -364,7 +364,7 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                                 (
                                     <div key={d.id} onClick={() => setSelectedDealer(d)}
                                         className="px-1 py-1 text-sm font-semibold hover:bg-blue-50 cursor-pointer transition-colors ">
-                                        {d.name}
+                                        {d.name} ({d.city})
                                     </div>
                                 ))}
                             </div>
