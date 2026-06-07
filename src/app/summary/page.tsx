@@ -229,7 +229,7 @@ export default function SummaryPage() {
           <tbody>
             {paginatedGroups.map(g => (
               <tr key={g.id} className="border-t" onClick={()=> setSelectedOrder(g)}>
-                <td className="p-0.25 pt-1 pb-1">{g.dealer?.name} ({g.dealer?.city})</td>
+                <td className="p-0.25 pt-1 pb-1 font-semibold">{g.dealer?.name} ({g.dealer?.city})</td>
                 <td className="p-0.25">{new Date(g.created_at).toLocaleDateString("en-GB").replace("/20","/")}</td>
                 <td className="p-0.25 pl-0 pr-0.5 text-right">{g.total_qty}</td>
                 {/* <td className="p-0.5">{g.narration || '-'}</td> */}

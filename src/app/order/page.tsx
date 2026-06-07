@@ -111,7 +111,7 @@ export default function OrderPage() {
 
         setterQuery((prev) => {
             const next = [...prev];
-            next[idx] = p.base_name;
+            next[idx] = p.base_name_nick ? p.base_name_nick : p.base_name;
             return next;
         });
 
@@ -287,9 +287,9 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-4 px-2 sm:px-2 lg:px-3">
+        <div className="min-h-screen bg-gray-50 py-1 px-1.5 sm:px-2 lg:px-3">
             <div className="mx-auto max-w-7xl">
-                <div className="flex items-center justify-between pb-2">
+                <div className="flex items-center justify-between pb-1">
                     <h2 className="text-xl font-bold text-gray-900">New Order</h2>
                     <button
                         onClick={saveOrder}
@@ -339,10 +339,10 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                 </div>
 
                 {/* DEALER SECTION */}
-                <div className="mb-2 bg-sky-300 shadow rounded-xl p-2 pl-2 pt-0.25 border-gray-200 focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]">
-                    <label className="block text-md font-medium text-gray-700 mb-0.5">
+                <div className="mb-1 bg-sky-300 shadow rounded-xl border-gray-200 focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]">
+                    {/* <label className="block text-md font-medium text-gray-700 mb-0.5">
                         Dealer
-                    </label>
+                    </label> */}
                     <input
                         value={selectedDealer?.name ?? dealerQuery}
                         onChange={(e) => {
@@ -350,29 +350,31 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                             setDealerQuery(e.target.value);
                         }}
                         placeholder="Search dealer (min 3 characters)..."
-                        className="w-full bg-white md:w-96 px-2 py-1 border border-gray-300 rounded-lg 
-                                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none "
+                        className="w-full text-[18px] bg-white px-1 py-0 leading-relaxed border border-gray-300 rounded-lg 
+                                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none 
+                                    font-semibold not-placeholder-shown:bg-teal-100"
                     />
                     {selectedDealer ? null :
                         (
-                            <div className="mt-1 border border-gray-200 rounded-lg max-h-60 overflow-y-auto bg-white shadow-sm">
+                            <div className="mt-.25 border border-gray-200 rounded-lg max-h-60 overflow-y-auto bg-white shadow-sm">
                                 {dealerOptions.length === 0 && dealerQuery.length >= 3 && (
                                     <div className="px-4 py-1 text-center text-sm font-bold  text-red-600">No dealers found</div>
                                 )}
                                 {dealerOptions.map((d) =>
                                 (
                                     <div key={d.id} onClick={() => setSelectedDealer(d)}
-                                        className="px-4 py-1 text-sm hover:bg-blue-50 cursor-pointer transition-colors ">
+                                        className="px-1 py-1 text-sm font-semibold hover:bg-blue-50 cursor-pointer transition-colors ">
                                         {d.name}
                                     </div>
                                 ))}
                             </div>
                         )}
                 </div>
-                {/* <div className="bg-red-300 shadow rounded-xl  border-gray-200 focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]"> */}
+                {/* <div className="bg-red-900 leading-rounded-xl m-0 p-0"> */}
                     <textarea value={narration} onChange={(e) => setNarration(e.target.value)} 
                     placeholder="Scheme/Payment/Adv Material or any other instructions..."
-                    className="w-full bg-white md:w-96 px-1 py-1 border border-gray-300 rounded-lg 
+                    className="w-full px-1 border border-gray-300 rounded-lg font-semibold
+                                align-top mb-0.5
                                 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none "
                     />
                 {/* </div> */}
@@ -381,7 +383,7 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                     {/* ── ADULTS ──────────────────────────────────────────────── 
                     mb-2 bg-white shadow rounded-xl p-2 pl-4 pt-0.25 border-gray-200 focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]*/}
                     <section className="bg-orange-500 shadow rounded-xl p-0.5 border border-gray-200">
-                        <div className="flex items-center pl-2 mb-0.5 p-0.5 justify-between">
+                        <div className="flex items-center pl-2 justify-between">
                             <h2 className="text-md font-semibold ">Gents / Ladies</h2>
                             <button
                                 onClick={() => addRow("adult")}
@@ -393,11 +395,11 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
 
                         {adultItems.map((row, idx) => (
                             <div key={`adult-${idx}`}
-                                className="mb-1 last:mb-0 p-1 border border-gray-200 rounded-lg bg-gray-50
+                                className="mb-0.5 last:mb-0 p-0.25 border border-gray-200 rounded-lg bg-gray-50
                                             focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]">
 
-                                <div className="flex flex-col sm:flex-row sm:items-start gap-0 mb-0.5">
-                                    <div className="flex gap-1 min-w-0 mb-0">
+                                <div className="flex flex-col sm:flex-row sm:items-start gap-0 mb-0">
+                                    <div className="flex gap-0.25 min-w-0 mb-0">
                                         <button
                                             onClick={() => {
                                                 if (window.confirm(`Remove this product (${row.product_name || "unsaved"})?`)) {
@@ -423,8 +425,8 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                                                 });
                                             }}
                                             placeholder="Search product (min 3 chars)..."
-                                            className="flex-1 px-4 py-.5 border border-gray-300 rounded-lg 
-                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none "
+                                            className="flex-1 px-1 py-.5 border border-gray-300 rounded-lg font-semibold
+                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none not-placeholder-shown:bg-orange-200"
                                         />
 
                                         <input type="number" value={row.price ?? ""}
@@ -440,10 +442,10 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                                                 {adultProductOptions[idx].map((p) => (
                                                     <div
                                                         key={p.id}
-                                                        className="px-4 py-.25  hover:bg-blue-50 cursor-pointer transition-colors"
+                                                        className="px-2 py-.25  hover:bg-blue-50 cursor-pointer transition-colors"
                                                         onClick={() => selectProduct("adult", idx, p)}
                                                     >
-                                                        {p.base_name}
+                                                        {p.base_name_nick ? p.base_name_nick : p.base_name}
                                                     </div>
                                                 ))}
                                             </div>
@@ -452,31 +454,31 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                                 </div>
 
                                 {/* SIZE HEADERS + INPUTS */}
-                                <div className="overflow-x-auto mt-0 pt-0">
-                                    <div className="inline-flex gap-1.25 m-0">
+                                <div className="overflow-x-auto leading-tight m-0 p-0">
+                                    <div className="inline-flex gap-1.25 m-0 pl-0.25">
                                         {ADULT_SIZES.map((size) => (
-                                            <div key={size} className="flex flex-col items-center w-7.75 pl-2 m-0">
-                                                <span className="text-[14px] font-medium text-gray-500">
+                                            <div key={size} className="flex flex-col items-center w-8.25 pl-1 m-0">
+                                                <span className="text-[14px] font-medium text-gray-500 leading-tight m-0 p-0">
                                                     {size}
                                                 </span>
                                                 <input type="number" value={row.quantities[size] ?? ""}
                                                     onChange={(e) => setQty("adult", idx, size, e.target.value)}
-                                                    className="w-auto max-w-[33px] text-center
+                                                    className={`text-[18px] w-auto max-w-[35px] text-center
                                                                 border border-gray-300 rounded-md
-                                                                focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                                                ${row.quantities[size] ? 'bg-orange-200' : 'bg-transparent'}
+                                                                focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
                                                 />
                                             </div>
                                         ))}
-                                        <span className="px-2 text-[15px] text-center font-medium text-gray-500 mb-0.5">Total<br />{getRowTotal(row.quantities)}</span>
+                                        <span className="px-1 text-[15px] text-center font-medium text-gray-500 mb-0.5">Total<br />{getRowTotal(row.quantities)}</span>
                                     </div>
                                 </div>
                             </div>
                         ))}
                     </section>
-
                     {/* ── KIDS ────────────────────────────────────────────────── */}
                     <section className="bg-green-300 shadow rounded-xl p-0.5 border border-gray-200">
-                        <div className="flex items-center pl-2 mb-0.5 p-0.5 justify-between">
+                        <div className="flex items-center pl-2 justify-between">
                             <h2 className="text-md font-semibold ">Kids</h2>
                             <button
                                 onClick={() => addRow("kids")}
@@ -488,11 +490,11 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
 
                         {kidsItems.map((row, idx) => (
                             <div key={`kids-${idx}`}
-                                className="mb-1 last:mb-0 p-1 border border-gray-200 rounded-lg bg-gray-50
+                                className="mb-0.5 last:mb-0 p-0.25 border border-gray-200 rounded-lg bg-gray-50
                                             focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]">
 
-                                <div className="flex flex-col sm:flex-row sm:items-start gap-0 mb-0.5">
-                                    <div className="flex gap-1 min-w-0 mb-0">
+                                <div className="flex flex-col sm:flex-row sm:items-start gap-0 mb-0">
+                                    <div className="flex gap-0.25 min-w-0 mb-0">
                                         <button
                                             onClick={() => {
                                                 if (window.confirm(`Remove this product (${row.product_name || "unsaved"})?`)) {
@@ -518,8 +520,8 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                                                 });
                                             }}
                                             placeholder="Search product (min 3 chars)..."
-                                            className="flex-1 px-4 py-.5 border border-gray-300 rounded-lg 
-                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none "
+                                            className="flex-1 px-1 py-.5 border border-gray-300 rounded-lg  font-semibold
+                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none not-placeholder-shown:bg-yellow-200"
                                         />
                                         <input type="number" value={row.price ?? ""}
                                                     onChange={(e) => setPrice("kids", idx, e.target.value)}
@@ -534,10 +536,10 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                                                 {kidsProductOptions[idx].map((p) => (
                                                     <div
                                                         key={p.id}
-                                                        className="px-4 py-.25  hover:bg-blue-50 cursor-pointer transition-colors"
+                                                        className="px-2 py-.25  hover:bg-blue-50 cursor-pointer transition-colors"
                                                         onClick={() => selectProduct("kids", idx, p)}
                                                     >
-                                                        {p.base_name}
+                                                        {p.base_name_nick ? p.base_name_nick : p.base_name}
                                                     </div>
                                                 ))}
                                             </div>
@@ -546,22 +548,23 @@ const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
                                 </div>
 
                                 {/* SIZE HEADERS + INPUTS */}
-                                <div className="overflow-x-auto mt-0 pt-0">
-                                    <div className="inline-flex gap-1.25 m-0">
+                                <div className="overflow-x-auto m-0 p-0 leading-tight">
+                                    <div className="inline-flex gap-1.25 m-0 pl-0.25">
                                         {KIDS_SIZES.map((size) => (
-                                            <div key={size} className="flex flex-col items-center w-7.75 pl-2 m-0">
-                                                <span className="text-[14px] font-medium text-gray-500">
+                                            <div key={size} className="flex flex-col items-center w-8.25 pl-1 m-0">
+                                                <span className="text-[14px] font-medium text-gray-500 m-0 p-0 leading-tight">
                                                     {size}
                                                 </span>
                                                 <input type="number" value={row.quantities[size] ?? ""}
                                                     onChange={(e) => setQty("kids", idx, size, e.target.value)}
-                                                    className="w-auto max-w-[33px] text-center
+                                                    className={`text-[18px] w-auto max-w-[35px] text-center
+                                                                ${row.quantities[size] ? 'bg-yellow-200' : 'bg-transparent'}
                                                                 border border-gray-300 rounded-md
-                                                                focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                                                focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
                                                 />
                                             </div>
                                         ))}
-                                        <span className="px-2 text-[15px] text-center font-medium text-gray-500 mb-0.5">Total<br />{getRowTotal(row.quantities)}</span>
+                                        <span className="px-1 text-[15px] text-center font-medium text-gray-500">Total<br />{getRowTotal(row.quantities)}</span>
                                     </div>
                                 </div>
                             </div>
