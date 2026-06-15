@@ -91,6 +91,12 @@ export async function POST(req: Request) {
     .execute('sp_ChallanHFOOrder');
 
     console.log('Stored procedure result:', result.recordset[0]['']);
+
+    await supabase
+      .from('orders_matrix')
+      .update({ SGMChallanNum: result.recordset[0][''], SGMExportTime: new Date().toISOString() })
+      .eq('order_id', orderId);
+
     return NextResponse.json({ message: 'Order exported to SGM Challan '+result.recordset[0]['']});
 
   }

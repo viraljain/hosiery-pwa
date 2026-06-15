@@ -117,14 +117,17 @@ export default function SummaryPage() {
   const captureRef = useRef<HTMLDivElement>(null);
   // const newRef = useRef<HTMLDivElement>(null);
   const handleWAppImage = async () => {
-    var element = document.getElementById('order-details-modal');
-    console.log('Element for capture:', element);
+    const element = document.getElementById('order-details-modal');
 
     // Extra stabilization for tables + React
     await document.fonts.ready; // Ensure fonts are loaded for accurate rendering
     // await new Promise(resolve => setTimeout(resolve, 120)); // Let layout settle before capture
-    // await setTimeout(() => {},1000); // wait 1 second between items
-    await html2canvas(element as HTMLElement, {
+
+    const rect = element!.getBoundingClientRect();
+    const captureWidth = Math.ceil(rect.width);
+    const captureHeight = Math.ceil(rect.height);
+
+    const canvas = await html2canvas(element as HTMLElement, {
       useCORS: true,
       // backgroundColor: "#ffffff",
       // windowWidth: captureWidth,
@@ -135,7 +138,8 @@ export default function SummaryPage() {
       // allowTaint: false,
       // foreignObjectRendering: true,
       imageTimeout: 15000,
-    }).then(canvas => {
+    })
+     .then(canvas => {
       //const imgData = canvas.toDataURL('image/png');
       // const wAppUrl = `https://wa.me/?text=${encodeURIComponent(imgData)}`;
       // window.open(wAppUrl, '_blank');
@@ -156,7 +160,6 @@ export default function SummaryPage() {
       });
     });
 
-    element=null;
 
     /* ***** Trying HTML-TO-IMAGE now ***** */
     //  if (!captureRef.current){ alert('Capture reference is not available'); return;}
@@ -365,43 +368,14 @@ export default function SummaryPage() {
               </tbody>
             </table>
           </div> */}
-          {/* */}
+          {/* 
           <div
             className="bg-white p-3 rounded-lg shadow-lg max-w-4xl w-full max-h-[80vh] overflow-y-auto"
             onClick={e => e.stopPropagation()} // Prevent close on inside click
             id="order-details-modal"
             ref={captureRef}
           >
-            <style>{`
-              #order-details-modal, #order-details-modal * {
-                font-family: comic sans ms !important;
-                font-size: 12px !important;
-                color: #000 !important;
-                box-sizing: border-box !important;
-                background-clip: padding-box !important;
-              }
-              #order-details-modal table {
-                width: 100% !important;
-                border-collapse: collapse !important;
-                border-spacing: 0 !important;
-                //table-layout: fixed !important;
-              }
-              #order-details-modal td,
-              #order-details-modal th,
-              #order-details-modal tr 
-              {
-                border: 0.5px solid #000 !important;
-              }
-              #order-details-modal td,
-              #order-details-modal th {
-                padding: 0.15rem !important;
-              }
-              .qty-td {
-                text-align: center !important;
-                font-size: 13.5px !important;
-              }
-            `}</style>
-            {/* <div className="flex w-full">
+            <div className="flex w-full">
               <div className="flex-5"><h3 className="text-md font-semibold mb-1">{selectedOrder.dealer?.name}</h3></div>
               <div className="flex-1 flex flex-col mb-2">
                 <span className='text-sm font-semibold'>{new Date(selectedOrder.created_at).toLocaleDateString("en-GB").replace("/20","/")}</span>
@@ -410,26 +384,8 @@ export default function SummaryPage() {
             </div>
             <div className="mb-2 italic text-sm border-1">Narration:&nbsp;
             {selectedOrder.narration}
-            </div> */}
-            <div style={{ display: "flex", width: "100%" }}>
-              <div style={{ flex: 5 }}>
-                <h3 style={{fontSize: "1rem", // text-md
-                    fontWeight: 600, // font-semibold
-                    marginBottom: "0.25rem" // mb-1
-                  }}>{selectedOrder.dealer?.name}</h3>
-              </div>
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", marginBottom: "0.5rem" }}>
-                <span style={{ fontSize: "0.875rem", fontWeight: 600 }}>
-                  {new Date(selectedOrder.created_at).toLocaleDateString("en-GB").replace("/20","/")}
-                </span>
-                <span style={{ fontSize: "0.875rem", fontWeight: 600 }}>
-                  {selectedOrder.challan || ""}
-                </span>
-              </div>
             </div>
-            <div style={{ marginBottom: "0.5rem", fontStyle: "italic", fontSize: "0.875rem", borderWidth: "1px" }}>
-              Narration:&nbsp;{selectedOrder.narration}
-            </div>
+
 
             {adultItems.length > 0 && (
               <div className="mb-2">
@@ -438,29 +394,30 @@ export default function SummaryPage() {
                 <tr className='border'>
                         <td className="w-21 text-center text-xs font-medium border">Product Name</td>
                         {ADULT_SIZES.map(size => (
-                          <td key={size} style={{ textAlign: "center" }} className="w-8 text-center text-xs font-medium border p-0">{size}</td>
+                          <td key={size} className="w-8 text-center text-xs font-medium border p-0">{size}</td>
                         ))}
-                        <td style={{ textAlign: "center" }} className="w-8 text-center text-xs font-medium border p-0">Total</td>
+                        <td className="w-8 text-center text-xs font-medium border p-0">Total</td>
                       </tr>
-                  
+                  </tbody></table>
                 {adultItems.map((item: any, idx: number) => {
                   const quantities = item.quantities || {};
                   const total = Object.values(quantities).reduce((sum: number, q: any) => sum + (Number(q) || 0), 0);
                   return (
-                    // <div key={idx} className="mb-0">
-                      //<table><tbody>
-                      <tr key={idx} className='border'>
+                    <div key={idx} className="mb-0">
+                      <table><tbody>
+                      <tr className='border'>
                         <td className="w-21 text-left text-xs font-medium border p-0">{item.base?.base_name_nick?.toLowerCase().replace('maestro', '').replace('divya', '')} {item.price>0 && `(${item.price})`}</td>
                         {ADULT_SIZES.map(size => (
-                          <td key={size} className="qty-td w-8 text-center border p-0">{quantities[size] || '-'}</td>
+                          <td key={size} className="w-8 text-center border p-0">
+                            {quantities[size] || '-'}
+                          </td>
                         ))}
-                        <td className="qty-td w-8 text-center p-0">{total}</td>
+                        <td className="w-8 text-center p-0">{total}</td>
                       </tr>
-                      //</tbody></table>
-                    //</div>
+                      </tbody></table>
+                    </div>
                   );
                 })}
-                </tbody></table>
               </div>
             )}
 
@@ -470,35 +427,36 @@ export default function SummaryPage() {
                 <tr className='border'>
                         <td className="w-21 text-center text-xs font-medium border">Product Name</td>
                         {KIDS_SIZES.map(size => (
-                          <td key={size} style={{ textAlign: "center" }} className="w-8 text-center text-xs font-medium border p-0">{size}</td>
+                          <td key={size} className="w-8 text-center text-xs font-medium border p-0">{size}</td>
                         ))}
-                        <td style={{ textAlign: "center" }} className="w-8 text-center text-xs font-medium border p-0">Total</td>
+                        <td className="w-8 text-center text-xs font-medium border p-0">Total</td>
                       </tr>
-                  {/* </tbody></table> */}
+                  </tbody></table>
                 {kidsItems.map((item: any, idx: number) => {
                   const quantities = item.quantities || {};
                   const total = Object.values(quantities).reduce((sum: number, q: any) => sum + (Number(q) || 0), 0);
                   return (
-                    //<div key={idx} className="mb-0">
-                    //<table><tbody>
-                      <tr key={idx} className='border'>
+                    <div key={idx} className="mb-0">
+                    <table><tbody>
+                      <tr className='border'>
                         <td className="w-21 text-left text-xs font-medium border p-0">{item.base?.base_name_nick?.toLowerCase().replace('maestro', '').replace('divya', '')} {item.price>0 && `(${item.price})`}</td>
                         {KIDS_SIZES.map(size => (
-                          <td key={size} className="qty-td w-8 text-center border p-0">{quantities[size] || '-'}</td>
+                          <td key={size} className="w-8 text-center border p-0">
+                            {quantities[size] || '-'}
+                          </td>
                         ))}
-                        <td className="qty-td w-8 text-center p-0">{total}</td>
+                        <td className="w-8 text-center p-0">{total}</td>
                       </tr>
-                      //</div></tbody></table>
-                    //</div>
+                      </tbody></table>
+                    </div>
                   );
                 })}
-                </tbody></table>
               </div>
             )}
           </div> 
-       {/**/}
-        {/* Tailwind classes converted to inline styles for better html2canvas compatibility */}
-        {/*  <div
+       */}
+        /* Tailwind classes converted to inline styles for better html2canvas compatibility */
+          <div
             style={{
               backgroundColor: "#ffffff",
               padding: "0.75rem", // p-3
@@ -514,8 +472,8 @@ export default function SummaryPage() {
             onClick={e => e.stopPropagation()}
             id="order-details-modal"
             ref={captureRef}
-          >*/}
-           {/* <style>{`
+          >
+            <style>{`
               #order-details-modal, #order-details-modal * {
                 font-family: Arial, Helvetica, sans-serif !important;
                 color: #000 !important;
@@ -558,10 +516,9 @@ export default function SummaryPage() {
             <div style={{ marginBottom: "0.5rem", fontStyle: "italic", fontSize: "0.875rem", borderWidth: "1px", borderStyle: "solid", borderColor: "#000", padding: "0.35rem" }}>
               Narration:&nbsp;{selectedOrder.narration}
             </div>
-            */}
 
             {/* Adult section */}
-            {/*
+            
             {adultItems.length > 0 && (
               <div style={{ marginBottom: "0.5rem" }}>
                 <table>
@@ -652,9 +609,8 @@ export default function SummaryPage() {
                 })}
               </div>
             )}
-                */}
+
             {/* Kids section */}
-            {/*
             {kidsItems.length > 0 && (
               <div style={{ marginBottom: "0.5rem" }}>
                 <table>
@@ -746,15 +702,14 @@ export default function SummaryPage() {
               </div>
             )}
           </div>
-          */}
 
-          <div className="flex flex-row mt-2 space-x-2">
-              <button className="px-2 py-2 bg-blue-600 text-white rounded" onClick={handleDeleteOrder}>🗑️ Delete</button>
-              <button disabled className="px-2 py-2 bg-blue-600 text-white rounded disabled:bg-gray-400" onClick={handleUpdateOrder}>Update</button>
-              <button className="px-2 py-2 bg-blue-600 text-white rounded" onClick={(e) => { e.stopPropagation(); exportOrder(selectedOrder.order_id);}}>Export</button>
-              <button className="px-2 py-2 bg-blue-600 text-white rounded" onClick={handleWAppImage}>WApp Image</button>
-              <button disabled className="px-2 py-2 bg-blue-600 text-white rounded disabled:bg-gray-400" onClick={handleWAppText}>Wapp Text</button>
-              <button className="px-2 py-2 bg-blue-600 text-white rounded" onClick={() => setSelectedOrder(null)}>Close</button>
+          <div className="text-right">
+              <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={handleDeleteOrder}>🗑️ Delete Order</button>
+              <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={handleUpdateOrder}>Update Order</button>
+              <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={(e) => { e.stopPropagation(); exportOrder(selectedOrder.order_id);}}>Export Order</button>
+              <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={handleWAppImage}>Whatsapp Image</button>
+              <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={handleWAppText}>Whatsapp Text</button>
+              <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={() => setSelectedOrder(null)}>Close</button>
             </div>
         </div>
       )}
