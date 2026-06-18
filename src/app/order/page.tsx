@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { searchProducts, searchDealers, getOrderbyId } from "@/lib/data";
+import React from "react";
 import clipboardy from "clipboardy";
 import { useSearchParams } from "next/navigation";
 import { setDefaultAutoSelectFamily } from "net";
@@ -15,11 +16,12 @@ type ItemRow = { base_id?: string; product_name?: string; product_name_nick?: st
 const ADULT_SIZES = ["77", "80", "85", "90", "95", "100", "105", "110", "120"];
 const KIDS_SIZES = ["35", "40", "45", "50", "55", "60", "65", "70", "75"];
 
-interface OrderPageProps {
-    searchParams?: { [key: string]: string | string[] | undefined };
-}
+// interface OrderPageProps {
+//     searchParams?: { [key: string]: string | string[] | undefined };
+// }
 
-export default function OrderPage() {
+// export default function OrderPage() {
+export default function OrderPage({ searchParams }: { searchParams: Promise<{ orderId?: string }> }) {
     const [dealerQuery, setDealerQuery] = useState("");
     const [dealerOptions, setDealerOptions] = useState<Dealer[]>([]);
     const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
@@ -40,8 +42,11 @@ export default function OrderPage() {
 
     // ── Query parameters ────────────────────────────────────────────────
     //const searchParams = useMemo(() => new URLSearchParams(window.location.search), []);
-    const searchParams = useSearchParams();   // ✅ returns URLSearchParams
-    const orderId = searchParams.get("orderId");
+    /** WORKING IN DEV but in Vercel Production - PRERENDER ERROR due to useSearchParams * */
+    // const searchParams = useSearchParams();   // ✅ returns URLSearchParams
+    //const orderId = searchParams.get("orderId");
+    /** * */
+    const orderId = React.use(searchParams).orderId;
     // const orderId = searchParams?.orderId as string | undefined;
     const isModify = !!orderId;
 
