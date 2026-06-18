@@ -7,7 +7,7 @@ import * as htmlToImage from 'html-to-image';
 // import router from 'next/router';
 import { useRouter } from 'next/navigation';
 
-type Dealer = { id: string; name: string; phone?: string };
+type Dealer = { id: string; name: string; phone?: string; city?: string };
 
 // const ADULT_SIZES = ["75/78", "80", "85", "90", "95", "100", "105", "110", "120"];
 const ADULT_SIZES = ["77", "80", "85", "90", "95", "100", "105", "110", "120"];
