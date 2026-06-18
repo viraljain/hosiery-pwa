@@ -38,13 +38,13 @@ export async function createMatrixOrder(payload: {
 
 export async function getOrdersMatrix() {
     return supabase.from('orders_matrix')
-        .select('order_id, dealer: dealer_id(id, name, city), base:base_id(id, base_name, category, base_name_nick), quantities, salesperson, narration, created_at, price, SGMChallanNum')
+        .select('order_id, dealer: dealer_id(id, name, phone, city), base:base_id(id, base_name, category, base_name_nick), quantities, salesperson, narration, created_at, price, SGMChallanNum')
         .order('created_at', { ascending: false });
 }
 
 export async function getOrderbyId(orderId: string) {
     return supabase.from('orders_matrix')
-        .select('order_id, dealer: dealer_id(id, name, city), base:base_id(id, base_name, category, base_name_nick), quantities, salesperson, narration, created_at, price, SGMChallanNum')
+        .select('order_id, dealer: dealer_id(id, name, phone, city), base:base_id(id, base_name, category, base_name_nick), quantities, salesperson, narration, created_at, price, SGMChallanNum')
         .eq('order_id', orderId)
         .order('created_at', { ascending: false });
 }

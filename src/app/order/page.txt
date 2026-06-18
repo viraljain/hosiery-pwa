@@ -2,10 +2,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { searchProducts, searchDealers, getOrderbyId } from "@/lib/data";
+import { searchProducts, searchDealers } from "@/lib/data";
 import clipboardy from "clipboardy";
-import { useSearchParams } from "next/navigation";
-import { setDefaultAutoSelectFamily } from "net";
 
 type Dealer = { id: string; name: string; phone?: string, city?: string };
 type Product = { id: string; base_name: string; base_name_nick?: string };
@@ -14,10 +12,6 @@ type ItemRow = { base_id?: string; product_name?: string; product_name_nick?: st
 // const ADULT_SIZES = ["75/78", "80", "85", "90", "95", "100", "105", "110", "120"];
 const ADULT_SIZES = ["77", "80", "85", "90", "95", "100", "105", "110", "120"];
 const KIDS_SIZES = ["35", "40", "45", "50", "55", "60", "65", "70", "75"];
-
-interface OrderPageProps {
-    searchParams?: { [key: string]: string | string[] | undefined };
-}
 
 export default function OrderPage() {
     const [dealerQuery, setDealerQuery] = useState("");
@@ -34,17 +28,7 @@ export default function OrderPage() {
 
     const [narration, setNarration] = useState<string>('');
 
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
     const debounceRef = useRef<number | null>(null);
-
-    // ── Query parameters ────────────────────────────────────────────────
-    //const searchParams = useMemo(() => new URLSearchParams(window.location.search), []);
-    const searchParams = useSearchParams();   // ✅ returns URLSearchParams
-    const orderId = searchParams.get("orderId");
-    // const orderId = searchParams?.orderId as string | undefined;
-    const isModify = !!orderId;
-
 
     // ── Helper functions ────────────────────────────────────────────────
     const addRow = (category: "adult" | "kids") => {
@@ -81,8 +65,7 @@ export default function OrderPage() {
                 price: v,
             };
             return next;
-        })
-    };
+        })  };
 
     const setQty = (category: "adult" | "kids", idx: number, size: string, val: string) => {
         const v = Number(val) || 0;
@@ -100,22 +83,16 @@ export default function OrderPage() {
 
     // Total for a single row (you can keep it inline or extract)
     const getRowTotal = (quantities: Record<string, number>) =>
-        Object.values(quantities || 0).reduce((sum, q) => sum + (Number(q) || 0), 0);
+        Object.values(quantities).reduce((sum, q) => sum + (Number(q) || 0), 0);
 
     // Grand total - all adult rows + all kids rows
     const grandTotal = useMemo(() => {
         const adultSum = adultItems.reduce(
-            (sum, row) => {
-                if (!row || !row.quantities) return sum;
-                return sum + getRowTotal(row.quantities || 0)
-            },
+            (sum, row) => sum + getRowTotal(row.quantities),
             0
         );
         const kidsSum = kidsItems.reduce(
-            (sum, row) => {
-                if (!row || !row.quantities) return sum;
-                return sum + getRowTotal(row.quantities || 0)
-            },
+            (sum, row) => sum + getRowTotal(row.quantities),
             0
         );
         return adultSum + kidsSum;
@@ -128,7 +105,7 @@ export default function OrderPage() {
 
         setterItems((prev) => {
             const next = [...prev];
-            next[idx] = { ...next[idx], base_id: p.id, product_name: p.base_name, product_name_nick: p.base_name_nick};
+            next[idx] = { ...next[idx], base_id: p.id, product_name: p.base_name, product_name_nick: p.base_name_nick };
             return next;
         });
 
@@ -167,62 +144,6 @@ export default function OrderPage() {
         };
     }, [dealerQuery]);
 
-    // 15 June 2026 - ORDER UPDATE LOGIC - Load existing order details if orderId is present in query params
-    const firstLoadRef = useRef(false);
-    useEffect(() => {
-        if (firstLoadRef.current) return;
-        firstLoadRef.current = true;
-        if (isModify) {
-            console.log("Fetched orderId - ", orderId);
-            // alert("Modify mode detected. Fetching order details for orderId: " + orderId);
-
-            getOrderbyId(orderId as string).then(({ data, error }) => {
-                if (error) {
-                    alert("Error fetching order details: " + error.message);
-                    return;
-                }
-                if (data) {
-                    // alert("Order details fetched successfully for orderId: " + orderId + "\n" + JSON.stringify(data));
-                    if (data.length > 0) {
-                        const order = data[0];
-                        setSelectedDealer(Array.isArray(order.dealer) ? order.dealer[0] : order.dealer);
-                        setNarration(order.narration || "");
-                        removeRow("adult", 0); // Remove the initial empty row
-                        removeRow("kids", 0);  // Remove the initial empty row
-
-                        let index_adult=0, index_kids=0;
-                        
-                        // Assuming adultItems and kidsItems are stored in the order data
-                        for (let index = 0; index < data.length; index++) {
-                            const element = data[index];
-                            const adult = Object.keys(element.quantities).some((k: string) => ADULT_SIZES.includes(k));
-                            const kids = Object.keys(element.quantities || 0).some((k: string) => KIDS_SIZES.includes(k));
-                            if (adult) {
-                                addRow("adult");
-                                selectProduct("adult", index_adult, Array.isArray(element.base) ? element.base[index] : element.base);
-                                for (const [size, qty] of Object.entries(element.quantities)) {
-                                    setQty("adult", index_adult, size, String(qty));
-                                }
-                                index_adult++;
-                            }
-                            if (kids) {
-                                addRow("kids");
-                                selectProduct("kids", index_kids, Array.isArray(element.base) ? element.base[index] : element.base);
-                                for (const [size, qty] of Object.entries(element.quantities)) {
-                                    setQty("kids", index_kids, size, String(qty));
-                                }
-                                index_kids++;
-                            }
-                        }
-                    } else {
-                        alert("No order details found for orderId: " + orderId);
-                    }
-                }
-            });
-        }
-    }, [orderId]);
-
-
     // Product search for adults & kids (combined logic could be extracted later)
     useEffect(() => {
         const timer = setTimeout(async () => {
@@ -255,28 +176,24 @@ export default function OrderPage() {
 
         return () => clearTimeout(timer);
     }, [adultProductQuery, kidsProductQuery]);
-    const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
+const [canWhatsApp, setCanWhatsApp] = useState<boolean>(false);
     // ── UI & Save logic ─────────────────────────────────────────────────
     const canSave = useMemo(() => {
         if (!selectedDealer?.id) return false;
-        if (canWhatsApp) return false;
+        if(canWhatsApp) return false;
         const hasValidAdult = adultItems.some(
-            (i) => {
-                if (!i) return false;
-                return i.base_id && Object.values(i.quantities).some((q) => q > 0)
-            });
+            (i) => i.base_id && Object.values(i.quantities).some((q) => q > 0)
+        );
         const hasValidKids = kidsItems.some(
-            (i) => {
-                if (!i) return false;
-                return i.base_id && Object.values(i.quantities).some((q) => q > 0)
-            });
+            (i) => i.base_id && Object.values(i.quantities).some((q) => q > 0)
+        );
+
         return hasValidAdult || hasValidKids;
     }, [adultItems, kidsItems, selectedDealer, canWhatsApp]);
-
+    
 
     const [message, setMessage] = useState<string>('');
     const saveOrder = async () => {
-        if (isSubmitting) return; //Prevent multiple clicks
         if (!selectedDealer?.id) {
             alert("Select a dealer");
             return;
@@ -287,19 +204,16 @@ export default function OrderPage() {
             return;
         }
 
-        setIsSubmitting(true);  //Submitting starts - now Save/Modify button is disabled
-
         const payload = {
-            pl_order_id: isModify ? orderId : '',
-            pl_dealer_id: selectedDealer.id,
-            pl_items: items.map(i => ({
+            dealer_id: selectedDealer.id,
+            items: items.map(i => ({
                 base_id: i.base_id,
-                    price: typeof i.price === "number" ? i.price : 0,
+                price: i.price,
                 quantities: Object.fromEntries(
                     Object.entries(i.quantities).filter(([, q]) => Number(q) > 0)
                 ),
             })),
-            pl_narration: narration
+            narration
         };
         const res = await fetch("/api/orders", {
             method: "POST",
@@ -309,7 +223,6 @@ export default function OrderPage() {
         // alert("Saving order..." + JSON.stringify(payload));
         const data = await res.json();
         if (!res.ok) {
-            setIsSubmitting(false); //Submitting ends - Error detected - now Save/Modify button is enabled
             alert(`Error: ${data.error || "Failed to save"}`);
             return;
         }
@@ -320,11 +233,13 @@ export default function OrderPage() {
             dealerName: selectedDealer.name,
             adultItems: adultItems, kidsItems: kidsItems,
             narration: narration
-        });
+        }).replaceAll(/MAESTRO/gi, "M.").replaceAll(/DIVYA/gi, "D.").replaceAll(/PLATINUM/gi, "P.").replaceAll(/RN/gi, "RN").replaceAll(/RNS/gi, "RNS")
+        .toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); // capitalize first letters
+
         setMessage(message1);
         setCanWhatsApp(true);
-
-        alert("Order saved successfully" + "\n\n" + message1);
+        
+        alert("Order saved successfully"+"\n\n"+message1);
 
         // navigator.clipboard.writeText(message).then(() => { 
         //     const url = `https://chat.whatsapp.com/GUZtwWJJE3UCPDccb4vqP6`;
@@ -333,27 +248,21 @@ export default function OrderPage() {
 
         // const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
         // const url = `https://chat.whatsapp.com/GUZtwWJJE3UCPDccb4vqP6`;
-        // window.open(url, "_blank");  
-
+        // window.open(url, "_blank");
+        
 
         // reset
-        setSelectedDealer(null);
-        setNarration("");
-        setDealerQuery("");
-        setDealerOptions([]);
+        // setAdultItems([{ quantities: {} }]);
+        // setAdultProductQuery([""]);
+        // setAdultProductOptions([[]]);
 
-        setIsSubmitting(false);
-
-        setAdultItems([{ quantities: {} }]);
-        setAdultProductQuery([""]);
-        setAdultProductOptions([[]]);
-
-        setKidsItems([{ quantities: {} }]);
-        setKidsProductQuery([""]);
-        setKidsProductOptions([[]]);
+        // setKidsItems([{ quantities: {} }]);
+        // setKidsProductQuery([""]);
+        // setKidsProductOptions([[]]);
     };
-    function buildWhatsAppMessage({ orderId, dealerName, adultItems, kidsItems, narration }
-        : { orderId: string; dealerName?: string; adultItems: ItemRow[]; kidsItems: ItemRow[]; narration?: string }) {
+    function buildWhatsAppMessage({orderId,dealerName,adultItems,kidsItems, narration}
+        : {orderId: string;dealerName?: string;adultItems: ItemRow[];kidsItems: ItemRow[]; narration?: string}) 
+    {
         const header = [dealerName ? `${dealerName}` : null].filter(Boolean).join("\n");
 
         const adultItemsLines = adultItems
@@ -363,10 +272,8 @@ export default function OrderPage() {
                     .filter(([, q]) => Number(q) > 0)
                     .map(([s, q]) => `${s}/${q}`)
                     .join(", ");
-                return `${(i.product_name_nick ?? "").length > 0 ? i.product_name_nick : i.product_name}${Number(i.price) > 0 ? "(" + (i.price) + ")" : ""}: ${qtys || "—"}`;
-            }).join("\n").replaceAll(/MAESTRO/gi, "M.").replaceAll(/DIVYA/gi, "D.").replaceAll(/PLATINUM/gi, "P.").replaceAll(/RN/gi, "RN").replaceAll(/RNS/gi, "RNS")
-            .toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); // capitalize first letters
-;
+                return `${(i.product_name_nick??"").length > 0 ? i.product_name_nick : i.product_name}${Number(i.price)>0?"("+(i.price)+")":""}: ${qtys || "—"}`;
+            });
         const kidsItemsLines = kidsItems
             .filter(i => i.product_name)
             .map(i => {
@@ -374,11 +281,9 @@ export default function OrderPage() {
                     .filter(([, q]) => Number(q) > 0)
                     .map(([s, q]) => `${s}/${q}`)
                     .join(", ");
-                return `${(i.product_name_nick ?? "").length > 0 ? i.product_name_nick : i.product_name}${Number(i.price) > 0 ? "(" + (i.price) + ")" : ""}: ${qtys || "—"}`;
-            }).join("\n").replaceAll(/MAESTRO/gi, "M.").replaceAll(/DIVYA/gi, "D.").replaceAll(/PLATINUM/gi, "P.").replaceAll(/RN/gi, "RN").replaceAll(/RNS/gi, "RNS")
-            .toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); // capitalize first letters
-
-        return `${header}\n${adultItemsLines}\n${kidsItemsLines}\n${narration ? 'Note: ' + narration : ''}`;
+                return `${(i.product_name_nick??"").length > 0 ? i.product_name_nick : i.product_name}${Number(i.price)>0?"("+(i.price)+")":""}: ${qtys || "—"}`;
+            });
+        return `${header}\n${adultItemsLines.join("\n")}\n${kidsItemsLines.join("\n")}\n${narration ? 'Note: ' + narration : ''}`;
     }
 
     return (
@@ -388,34 +293,32 @@ export default function OrderPage() {
                     <h2 className="text-xl font-bold text-gray-900">New Order</h2>
                     <button
                         onClick={saveOrder}
-                        disabled={isSubmitting || !canSave}
+                        disabled={!canSave}
                         className={`px-3 py-1 rounded-lg font-medium text-white shadow-sm transition-colors
                                     ${canSave ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
                                 : "bg-gray-400 cursor-not-allowed"
                             }`}>
-                        {isSubmitting ? "⌛In Progress..." : (isModify ? "📝MODIFY" : "💾SAVE")}
+                        Save Order
                     </button>
-                    <button onClick={(e) => {
-                        e.preventDefault();
-                        navigator.clipboard.writeText(message).then(() => {
-                            const url = `https://chat.whatsapp.com/GUZtwWJJE3UCPDccb4vqP6`;
-                            window.open(url, "_blank");
-                        });
-                        alert("Order message copied to clipboard! " + message);
-                        // const url = `https://chat.whatsapp.com/GUZtwWJJE3UCPDccb4vqP6`;
-                        // window.open(url, "_blank");
+                    <button onClick={(e)=> {
+                            e.preventDefault();
+                            navigator.clipboard.writeText(message).then(() => {
+                                const url = `https://chat.whatsapp.com/GUZtwWJJE3UCPDccb4vqP6`;
+                                window.open(url, "_blank");
+                            }); 
+                            alert("Order message copied to clipboard! "+message);
+                            // const url = `https://chat.whatsapp.com/GUZtwWJJE3UCPDccb4vqP6`;
+                            // window.open(url, "_blank");
                     }}
-                        disabled={!canWhatsApp}
-                        className={`px-3 py-1 rounded-lg font-medium text-white shadow-sm transition-colors
-                                    ${canWhatsApp ? "bg-green-600 hover:bg-blue-700 active:bg-blue-800"
+                    disabled={!canWhatsApp}
+                    className={`px-3 py-1 rounded-lg font-medium text-white shadow-sm transition-colors
+                                    ${canWhatsApp ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
                                 : "bg-gray-400 cursor-not-allowed"
                             }`}
-                    ><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"  viewBox="0 0 16 16" style={{ display: "inline-block", verticalAlign: "middle" }}>
-                  <circle cx="8" cy="8" r="8" fill="#25D366" />
-                  <path fill="white" d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232" />WApp
-              </svg>WApp
+                    >
+                        WApp
                     </button>
-                    {/* <a href="#"
+                     {/* <a href="#"
                       onClick={(e) => 
                                     {
                                       e.preventDefault();
@@ -427,9 +330,9 @@ export default function OrderPage() {
                             }
             className={`px-2 py-1 rounded text-white transition-colors ${canSave ? "bg-green-600 hover:bg-green-700 cursor-pointer" : "bg-gray-400 cursor-not-allowed"}`}
           > */}
-                    {/* Send to WhatsApp Group (Message copied -&gt; Open Group -&gt; Paste in chat & Send) */}
-                    {/* WApp Group & Paste */}
-                    {/* </a> */}
+          {/* Send to WhatsApp Group (Message copied -&gt; Open Group -&gt; Paste in chat & Send) */}
+          {/* WApp Group & Paste */}
+          {/* </a> */}
                     <span className="bg-green-300 inline-block min-w-[100px] text-xl text-center font-bold text-gray-700">
                         Total {grandTotal}
                     </span>
@@ -468,12 +371,12 @@ export default function OrderPage() {
                         )}
                 </div>
                 {/* <div className="bg-red-900 leading-rounded-xl m-0 p-0"> */}
-                <textarea value={narration} onChange={(e) => setNarration(e.target.value)}
+                    <textarea value={narration} onChange={(e) => setNarration(e.target.value)} 
                     placeholder="Scheme/Payment/Adv Material or any other instructions..."
                     className="w-full px-1 border border-gray-300 rounded-lg font-semibold
                                 align-top mb-0.5
                                 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none "
-                />
+                    />
                 {/* </div> */}
                 {/* PRODUCTS SECTIONS */}
                 <div className="space-y-1">
@@ -527,11 +430,11 @@ export default function OrderPage() {
                                         />
 
                                         <input type="number" value={row.price ?? ""}
-                                            onChange={(e) => setPrice("adult", idx, e.target.value)}
-                                            className="w-auto max-w-[33px] text-center
+                                                    onChange={(e) => setPrice("adult", idx, e.target.value)}
+                                                    className="w-auto max-w-[33px] text-center
                                                                 border border-gray-300 rounded-md
                                                                 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                        />
+                                                />
                                     </div>
                                     <div className="mt-0 p-0">
                                         {!row.base_id && adultProductOptions[idx]?.length > 0 && (
@@ -621,11 +524,11 @@ export default function OrderPage() {
                                focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none not-placeholder-shown:bg-yellow-200"
                                         />
                                         <input type="number" value={row.price ?? ""}
-                                            onChange={(e) => setPrice("kids", idx, e.target.value)}
-                                            className="w-auto max-w-[33px] text-center
+                                                    onChange={(e) => setPrice("kids", idx, e.target.value)}
+                                                    className="w-auto max-w-[33px] text-center
                                                                 border border-gray-300 rounded-md
                                                                 focus:ring-1 focus:ring-blue-400 focus:border-blue-500 focus:bg-cyan-200"
-                                        />
+                                                />
                                     </div>
                                     <div className="mt-0 p-0">
                                         {!row.base_id && kidsProductOptions[idx]?.length > 0 && (
