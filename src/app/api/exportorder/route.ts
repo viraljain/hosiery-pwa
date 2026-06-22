@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     const { data: orders, error } = await supabase
       .from('orders_matrix')
       .select('order_id, dealer: dealer_id(id, name, city), base:base_id(id, base_name, category,BoxMultiple), quantities, salesperson, narration, created_at, price')
-      .eq('order_id', orderId);
+      .eq('order_id', orderId).order('index', { ascending: true });
 
     if (error) {
       console.error(error);

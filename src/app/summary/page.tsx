@@ -271,7 +271,7 @@ export default function SummaryPage() {
             }}
           >
             <option value={10}>15</option>
-            <option value={20}>25</option>
+            <option value={20}>20</option>
             <option value={50}>50</option>
           </select>
         </div>
