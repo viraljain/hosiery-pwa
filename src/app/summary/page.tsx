@@ -140,6 +140,12 @@ export default function SummaryPage() {
       // scale: Math.max(1, window.devicePixelRatio || 1),
       // allowTaint: false,
       // foreignObjectRendering: true,
+      scale:2,
+      scrollY: -window.scrollY, // adjust for scroll
+      //windowWidth: document.documentElement.scrollWidth,
+      //windowHeight: document.documentElement.scrollHeight,
+      height: element?.scrollHeight,
+      width: element?.scrollWidth,
       imageTimeout: 15000,
     }).then(canvas => {
       //const imgData = canvas.toDataURL('image/png');
@@ -251,7 +257,6 @@ export default function SummaryPage() {
     );
     return { adultItems: adult, kidsItems: kids };
   }, [selectedOrder]);
-
   return (
     <div className="bg-gray-50 text-gray-800 py-1 px-1.5 sm:px-2 lg:px-3">
       <div className="flex items-center justify-between">
@@ -309,11 +314,11 @@ export default function SummaryPage() {
         <table className="w-full text-sm">
           <thead className="bg-gray-100">
             <tr>
-              <th className="text-center p-0.25">Dealer</th>
-              <th className="text-center p-0.25">Date</th>
-              <th className="text-center p-0.25">Total</th>
-              {/* <th className="text-center p-0.25">Narration</th> */}
-              <th className="text-center p-0.25">Actions</th>
+              <th className="text-center p-px">Dealer</th>
+              <th className="text-center p-px">Date</th>
+              <th className="text-center p-px">Total</th>
+              {/* <th className="text-center p-px">Narration</th> */}
+              <th className="text-center p-px">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -322,13 +327,41 @@ export default function SummaryPage() {
               onClick={() => 
               {
                   setSelectedOrder(g); 
-                  const message1="Hello World";//buildWhatsappMessage(selectedOrder.order_id, selectedOrder.dealer?.name, adultItems, kidsItems, selectedOrder.narration)""; 
+                  // const message1=  selectedOrder.order_id;// + selectedOrder.dealer?.name + /* adultItems + kidsItems +*/ selectedOrder.narration; 
+                  const header = g.dealer?.name;
+
+        const adultItemsLines = g.items//;//adultItems
+            .filter((i:any) => i.base)
+            .map((i:any) => {
+                const qtys = Object.entries(i.quantities)
+                    .filter(([, q]) => Number(q) > 0)
+                    .map(([s, q]) => `${s}/${q}`)
+                    .join(", ");
+                return `${(i.base.base_name_nick ?? "").length > 0 ? i.base.base_name_nick : i.base.base_name}${Number(i.price) > 0 ? "(" + (i.price) + ")" : ""}: ${qtys || "—"}`;
+            }).join("\n").replaceAll(/MAESTRO/gi, "M.").replaceAll(/DIVYA/gi, "D.").replaceAll(/PLATINUM/gi, "P.").replaceAll(/RN/gi, "RN").replaceAll(/RNS/gi, "RNS")
+            .toLowerCase().replace(/\b\w/g, (c:any) => c.toUpperCase()); // capitalize first letters
+
+        const kidsItemsLines = kidsItems
+            .filter((i:any) => i.base)
+            .map((i:any) => {
+                const qtys = Object.entries(i.quantities)
+                    .filter(([, q]) => Number(q) > 0)
+                    .map(([s, q]) => `${s}/${q}`)
+                    .join(", ");
+                    
+                return `${(i.base.base_name_nick ?? "").length > 0 ? i.base.base_name_nick : i.base.base_name}${Number(i.price) > 0 ? "(" + (i.price) + ")" : ""}: ${qtys || "—"}`;
+            }).join("\n").replaceAll(/MAESTRO/gi, "M.").replaceAll(/DIVYA/gi, "D.").replaceAll(/PLATINUM/gi, "P.").replaceAll(/RN/gi, "RN").replaceAll(/RNS/gi, "RNS")
+            .toLowerCase().replace(/\b\w/g, (c:any) => c.toUpperCase()); // capitalize first letters
+
+
+                  //const message1=  g.order_id + g.dealer?.name + adultItems + kidsItems + (g.narration||''); 
+                  const message1 = `${header}\n${adultItemsLines}\n${kidsItemsLines}\n${g.narration ? 'Note: ' + g.narration : ''}`;
                   setMessage(message1);
               }
               }>
-                <td className="p-0.25 pt-1 pb-1 font-semibold">{g.dealer?.name} ({g.dealer?.city})</td>
-                <td className="p-0.25">{new Date(g.created_at).toLocaleDateString("en-GB").replace("/20", "/")}</td>
-                <td className="p-0.25 pl-0 pr-0.5 text-right">{g.total_qty}</td>
+                <td className="p-px pt-1 pb-1 font-semibold">{g.dealer?.name} ({g.dealer?.city})</td>
+                <td className="p-px">{new Date(g.created_at).toLocaleDateString("en-GB").replace("/20", "/")}</td>
+                <td className="p-px pl-0 pr-0.5 text-right">{g.total_qty}</td>
                 {/* <td className="p-0.5">{g.narration || '-'}</td> */}
                 <td className="p-0.5 text-center">{g.challan ||
                   <button className="text-blue-600 hover:underline"
@@ -785,13 +818,13 @@ export default function SummaryPage() {
                   <circle cx="8" cy="8" r="8" fill="#25D366" />
                   <path fill="white" d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232" />WApp
               </svg>Image</button>
-            <button disabled className="px-2 py-2 bg-blue-600 text-white rounded disabled:bg-gray-400" onClick={(e) => {
+            <button className="px-2 py-2 bg-blue-600 text-white rounded disabled:bg-gray-400" onClick={(e) => {
                         e.preventDefault();
                         navigator.clipboard.writeText(message).then(() => {
                             const url = `https://chat.whatsapp.com/GUZtwWJJE3UCPDccb4vqP6`;
                             window.open(url, "_blank");
                         });
-                        alert("Order message copied to clipboard! " + message);
+                        //alert("Order message copied to clipboard! " + message);
                     }}>
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"  viewBox="0 0 16 16" style={{ display: "inline-block", verticalAlign: "middle" }}>
                   <circle cx="8" cy="8" r="8" fill="#25D366" />
@@ -804,4 +837,4 @@ export default function SummaryPage() {
       )}
     </div>
   );
-}
+};

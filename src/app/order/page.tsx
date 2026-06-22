@@ -10,7 +10,7 @@ import { setDefaultAutoSelectFamily } from "net";
 
 type Dealer = { id: string; name: string; phone?: string, city?: string };
 type Product = { id: string; base_name: string; base_name_nick?: string };
-type ItemRow = { base_id?: string; product_name?: string; product_name_nick?: string; quantities: Record<string, number>; price?: number };
+type ItemRow = { index: number; base_id?: string; product_name?: string; product_name_nick?: string; quantities: Record<string, number>; price?: number };
 
 // const ADULT_SIZES = ["75/78", "80", "85", "90", "95", "100", "105", "110", "120"];
 const ADULT_SIZES = ["77", "80", "85", "90", "95", "100", "105", "110", "120"];
@@ -26,11 +26,11 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
     const [dealerOptions, setDealerOptions] = useState<Dealer[]>([]);
     const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
 
-    const [adultItems, setAdultItems] = useState<ItemRow[]>([{ quantities: {} }]);
+    const [adultItems, setAdultItems] = useState<ItemRow[]>([{ quantities: {}, index: 0 }]);
     const [adultProductQuery, setAdultProductQuery] = useState<string[]>([""]);
     const [adultProductOptions, setAdultProductOptions] = useState<Product[][]>([[]]);
 
-    const [kidsItems, setKidsItems] = useState<ItemRow[]>([{ quantities: {} }]);
+    const [kidsItems, setKidsItems] = useState<ItemRow[]>([{ quantities: {}, index: 0 }]);
     const [kidsProductQuery, setKidsProductQuery] = useState<string[]>([""]);
     const [kidsProductOptions, setKidsProductOptions] = useState<Product[][]>([[]]);
 
@@ -54,11 +54,11 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
     // ── Helper functions ────────────────────────────────────────────────
     const addRow = (category: "adult" | "kids") => {
         if (category === "adult") {
-            setAdultItems((prev) => [...prev, { quantities: {} }]);
+            setAdultItems((prev) => [...prev, { quantities: {}, index: prev.length }]);
             setAdultProductQuery((prev) => [...prev, ""]);
             setAdultProductOptions((prev) => [...prev, []]);
         } else {
-            setKidsItems((prev) => [...prev, { quantities: {} }]);
+            setKidsItems((prev) => [...prev, { quantities: {}, index: prev.length }]);
             setKidsProductQuery((prev) => [...prev, ""]);
             setKidsProductOptions((prev) => [...prev, []]);
         }
@@ -98,6 +98,7 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
             next[idx] = {
                 ...next[idx],
                 quantities: { ...next[idx].quantities, [size]: v },
+                index: idx
             };
             return next;
         });
@@ -133,7 +134,7 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
 
         setterItems((prev) => {
             const next = [...prev];
-            next[idx] = { ...next[idx], base_id: p.id, product_name: p.base_name, product_name_nick: p.base_name_nick};
+            next[idx] = { ...next[idx], base_id: p.id, product_name: p.base_name, product_name_nick: p.base_name_nick };
             return next;
         });
 
@@ -195,8 +196,8 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
                         removeRow("adult", 0); // Remove the initial empty row
                         removeRow("kids", 0);  // Remove the initial empty row
 
-                        let index_adult=0, index_kids=0;
-                        
+                        let index_adult = 0, index_kids = 0;
+
                         // Assuming adultItems and kidsItems are stored in the order data
                         for (let index = 0; index < data.length; index++) {
                             const element = data[index];
@@ -298,8 +299,9 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
             pl_order_id: isModify ? orderId : '',
             pl_dealer_id: selectedDealer.id,
             pl_items: items.map(i => ({
+                index: i.index,
                 base_id: i.base_id,
-                    price: typeof i.price === "number" ? i.price : 0,
+                price: typeof i.price === "number" ? i.price : 0,
                 quantities: Object.fromEntries(
                     Object.entries(i.quantities).filter(([, q]) => Number(q) > 0)
                 ),
@@ -349,11 +351,11 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
 
         setIsSubmitting(false);
 
-        setAdultItems([{ quantities: {} }]);
+        setAdultItems([{ quantities: {}, index: 0 }]);
         setAdultProductQuery([""]);
         setAdultProductOptions([[]]);
 
-        setKidsItems([{ quantities: {} }]);
+        setKidsItems([{ quantities: {}, index: 0 }]);
         setKidsProductQuery([""]);
         setKidsProductOptions([[]]);
     };
@@ -371,7 +373,7 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
                 return `${(i.product_name_nick ?? "").length > 0 ? i.product_name_nick : i.product_name}${Number(i.price) > 0 ? "(" + (i.price) + ")" : ""}: ${qtys || "—"}`;
             }).join("\n").replaceAll(/MAESTRO/gi, "M.").replaceAll(/DIVYA/gi, "D.").replaceAll(/PLATINUM/gi, "P.").replaceAll(/RN/gi, "RN").replaceAll(/RNS/gi, "RNS")
             .toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); // capitalize first letters
-;
+        ;
         const kidsItemsLines = kidsItems
             .filter(i => i.product_name)
             .map(i => {
@@ -415,10 +417,10 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
                                     ${canWhatsApp ? "bg-green-600 hover:bg-blue-700 active:bg-blue-800"
                                 : "bg-gray-400 cursor-not-allowed"
                             }`}
-                    ><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"  viewBox="0 0 16 16" style={{ display: "inline-block", verticalAlign: "middle" }}>
-                  <circle cx="8" cy="8" r="8" fill="#25D366" />
-                  <path fill="white" d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232" />WApp
-              </svg>WApp
+                    ><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 16 16" style={{ display: "inline-block", verticalAlign: "middle" }}>
+                            <circle cx="8" cy="8" r="8" fill="#25D366" />
+                            <path fill="white" d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232" />WApp
+                        </svg>WApp
                     </button>
                     {/* <a href="#"
                       onClick={(e) => 
@@ -435,7 +437,7 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
                     {/* Send to WhatsApp Group (Message copied -&gt; Open Group -&gt; Paste in chat & Send) */}
                     {/* WApp Group & Paste */}
                     {/* </a> */}
-                    <span className="bg-green-300 inline-block min-w-[100px] text-xl text-center font-bold text-gray-700">
+                    <span className="bg-green-300 inline-block min-w-25 text-xl text-center font-bold text-gray-700">
                         Total {grandTotal}
                     </span>
                 </div>
@@ -497,11 +499,11 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
 
                         {adultItems.map((row, idx) => (
                             <div key={`adult-${idx}`}
-                                className="mb-0.5 last:mb-0 p-0.25 border border-gray-200 rounded-lg bg-gray-50
+                                className="mb-0.5 last:mb-0 p-px border border-gray-200 rounded-lg bg-gray-50
                                             focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]">
 
                                 <div className="flex flex-col sm:flex-row sm:items-start gap-0 mb-0">
-                                    <div className="flex gap-0.25 min-w-0 mb-0">
+                                    <div className="flex gap-px min-w-0 mb-0">
                                         <button
                                             onClick={() => {
                                                 if (window.confirm(`Remove this product -${row.product_name || ""}?`)) {
@@ -533,7 +535,7 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
 
                                         <input type="number" value={row.price ?? ""}
                                             onChange={(e) => setPrice("adult", idx, e.target.value)}
-                                            className="w-auto max-w-[33px] text-center
+                                            className="w-auto max-w-8.25 text-center
                                                                 border border-gray-300 rounded-md
                                                                 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                         />
@@ -557,7 +559,7 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
 
                                 {/* SIZE HEADERS + INPUTS */}
                                 <div className="overflow-x-auto leading-tight m-0 p-0">
-                                    <div className="inline-flex gap-1.25 m-0 pl-0.25">
+                                    <div className="inline-flex gap-1.25 m-0 pl-px">
                                         {ADULT_SIZES.map((size) => (
                                             <div key={size} className="flex flex-col items-center w-8.25 pl-1 m-0">
                                                 <span className="text-[14px] font-medium text-gray-500 leading-tight m-0 p-0">
@@ -565,7 +567,7 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
                                                 </span>
                                                 <input type="number" value={row.quantities[size] ?? ""}
                                                     onChange={(e) => setQty("adult", idx, size, e.target.value)}
-                                                    className={`text-[18px] w-auto max-w-[35px] text-center
+                                                    className={`text-[18px] w-auto max-w-8.75 text-center
                                                                 border border-gray-300 rounded-md
                                                                 ${row.quantities[size] ? 'bg-orange-200' : 'bg-transparent'}
                                                                 focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
@@ -592,11 +594,11 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
 
                         {kidsItems.map((row, idx) => (
                             <div key={`kids-${idx}`}
-                                className="mb-0.5 last:mb-0 p-0.25 border border-gray-200 rounded-lg bg-gray-50
+                                className="mb-0.5 last:mb-0 p-px border border-gray-200 rounded-lg bg-gray-50
                                             focus-within:shadow-[0_0_12px_4px_rgba(129,40,246,0.5)]">
 
                                 <div className="flex flex-col sm:flex-row sm:items-start gap-0 mb-0">
-                                    <div className="flex gap-0.25 min-w-0 mb-0">
+                                    <div className="flex gap-px min-w-0 mb-0">
                                         <button
                                             onClick={() => {
                                                 if (window.confirm(`Remove this product-${row.product_name || ""}?`)) {
@@ -627,7 +629,7 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
                                         />
                                         <input type="number" value={row.price ?? ""}
                                             onChange={(e) => setPrice("kids", idx, e.target.value)}
-                                            className="w-auto max-w-[33px] text-center
+                                            className="w-auto max-w-8.25 text-center
                                                                 border border-gray-300 rounded-md
                                                                 focus:ring-1 focus:ring-blue-400 focus:border-blue-500 focus:bg-cyan-200"
                                         />
@@ -651,7 +653,7 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
 
                                 {/* SIZE HEADERS + INPUTS */}
                                 <div className="overflow-x-auto m-0 p-0 leading-tight">
-                                    <div className="inline-flex gap-1.25 m-0 pl-0.25">
+                                    <div className="inline-flex gap-1.25 m-0 pl-px">
                                         {KIDS_SIZES.map((size) => (
                                             <div key={size} className="flex flex-col items-center w-8.25 pl-1 m-0">
                                                 <span className="text-[14px] font-medium text-gray-500 m-0 p-0 leading-tight">
@@ -659,7 +661,7 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
                                                 </span>
                                                 <input type="number" value={row.quantities[size] ?? ""}
                                                     onChange={(e) => setQty("kids", idx, size, e.target.value)}
-                                                    className={`text-[18px] w-auto max-w-[35px] text-center
+                                                    className={`text-[18px] w-auto max-w-8.75 text-center
                                                                 ${row.quantities[size] ? 'bg-yellow-200' : 'bg-transparent'}
                                                                 border border-gray-300 rounded-md
                                                                 focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}

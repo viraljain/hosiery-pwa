@@ -21,6 +21,7 @@ export async function POST(req: Request) {
             .map((i: any) => ({
                 order_id: orderId,
                 dealer_id:pl_dealer_id,
+                index: i.index,
                 base_id: i.base_id,
                 quantities: i.quantities, // jsonb column recommended
                 created_at: now,
