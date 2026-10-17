@@ -1,0 +1,46 @@
+CREATE OR REPLACE FUNCTION dealer_search(
+    search_text text
+)
+RETURNS TABLE (
+    id uuid,
+    name text,
+    phone text,
+    city text
+)
+LANGUAGE sql
+AS $$
+    WITH ranked AS
+    (
+        SELECT
+            d.id,
+            d.name,
+            d.phone,
+            d.city,
+            search_score(
+                d.name,
+                search_text
+            ) AS score
+        FROM dealers d
+        WHERE
+                d.name % search_text
+                OR
+lower(d.name) LIKE (
+                  '%' ||regexp_replace(lower(trim(search_text)),'\s+','%','g')|| '%'
+               )
+               OR
+EXISTS (
+SELECT 1
+FROM unnest(
+regexp_split_to_array(
+lower(name),
+'\W+'
+)
+) AS word
+WHERE soundex(word) = soundex(search_text)
+)
+    )
+    SELECT id, name, phone, city
+    FROM ranked
+    WHERE score > 30
+    ORDER BY score DESC;
+$$;

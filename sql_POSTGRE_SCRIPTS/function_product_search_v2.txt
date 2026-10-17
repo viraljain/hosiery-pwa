@@ -1,0 +1,41 @@
+CREATE OR REPLACE FUNCTION product_search(
+    search_text text
+)
+RETURNS TABLE (
+    id uuid, base_name text, base_name_nick text
+)
+LANGUAGE sql
+AS $$
+    WITH ranked AS
+    (
+        SELECT
+		pb.id, pb.base_name, pb.base_name_nick,
+            
+            search_score(
+                pb.base_name,
+                search_text
+            ) AS score
+        FROM products_base pb
+        WHERE
+                pb.base_name % search_text
+                OR
+lower(pb.base_name) LIKE (
+                  '%' ||regexp_replace(lower(trim(search_text)),'\s+','%','g')|| '%'
+               )
+               OR
+EXISTS (
+SELECT 1
+FROM unnest(
+regexp_split_to_array(
+lower(base_name),
+'\W+'
+)
+) AS word
+WHERE soundex(word) = soundex(search_text)
+)
+    )
+    SELECT id, base_name, base_name_nick
+    FROM ranked
+    WHERE score > 30
+    ORDER BY score DESC;
+$$;

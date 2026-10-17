@@ -10,9 +10,14 @@ import { useRouter } from 'next/navigation';
 type Dealer = { id: string; name: string; phone?: string; city?: string };
 
 // const ADULT_SIZES = ["75/78", "80", "85", "90", "95", "100", "105", "110", "120"];
-const ADULT_SIZES = ["77", "80", "85", "90", "95", "100", "105", "110", "120"];
-const KIDS_SIZES = ["35", "40", "45", "50", "55", "60", "65", "70", "75"];
-
+// #update starts 261017 - Let's try to make the sizes more flexible - instead of hardcoding them. 
+// Let's derive them from the order data itself. This way, if a new size is introduced, it will automatically be included in the summary without needing code changes.
+// If odd sizes like 77, 105, 110, etc. are not present in the selectedOrder data, they will be removed & not be visible. 
+// const ADULT_SIZES = ["77", "80", "85", "90", "95", "100", "105", "110", "120"];
+// const KIDS_SIZES = ["35", "40", "45", "50", "55", "60", "65", "70", "75"];
+var ADULT_SIZES = ["77", "80", "85", "90", "95", "100", "105", "110", "120"];
+var KIDS_SIZES = ["35", "40", "45", "50", "55", "60", "65", "70", "75"];
+// #update ends 261017
 
 export default function SummaryPage() {
   // const [dealers, setDealers] = useState<any[]>([]);
@@ -252,10 +257,27 @@ export default function SummaryPage() {
     const adult = selectedOrder.items.filter((i: any) =>
       Object.keys(i.quantities || {}).some((k: string) => ADULT_SIZES.includes(k))
     );
-    const kids = selectedOrder.items.filter((i: any) =>
-      Object.keys(i.quantities || {}).some((k: string) => KIDS_SIZES.includes(k))
-    );
-    return { adultItems: adult, kidsItems: kids };
+  const kids = selectedOrder.items.filter((i: any) =>
+    Object.keys(i.quantities || {}).some((k: string) => KIDS_SIZES.includes(k))
+  );
+
+  // #update starts 261017
+  const sizes_unique = [
+    ...new Set(
+      (selectedOrder.items??[]).flatMap((item: { quantities: any; }) => Object.keys(item.quantities ?? {}))
+    )
+  ].sort((a, b) => Number(a) - Number(b));
+  //alert("Unq sizes - " + sizes_unique);
+
+  if(!sizes_unique.includes("77")) { ADULT_SIZES = ADULT_SIZES.filter((s) => s !== "77"); }
+  if(!sizes_unique.includes("105")) { ADULT_SIZES = ADULT_SIZES.filter((s) => s !== "105"); }
+  if(!sizes_unique.includes("110")) { ADULT_SIZES = ADULT_SIZES.filter((s) => s !== "110"); }
+  if(!sizes_unique.includes("120")) { ADULT_SIZES = ADULT_SIZES.filter((s) => s !== "120"); }
+  if(!sizes_unique.includes("35")) { KIDS_SIZES = KIDS_SIZES.filter((s) => s !== "35"); }
+  if(!sizes_unique.includes("40")) { KIDS_SIZES = KIDS_SIZES.filter((s) => s !== "40"); }
+  // #update ends 261017
+    
+  return { adultItems: adult, kidsItems: kids };
   }, [selectedOrder]);
   return (
     <div className="bg-gray-50 text-gray-800 py-1 px-1.5 sm:px-2 lg:px-3">
@@ -509,7 +531,7 @@ export default function SummaryPage() {
                       // <div key={idx} className="mb-0">
                       //<table><tbody>
                       <tr key={idx} className='border'>
-                        <td className="w-21 text-left text-xs font-medium border p-0">{item.base?.base_name_nick?.replace('maestro', '').replace('divya', '')} {item.price > 0 && `(${item.price})`}</td>
+                        <td className="w-21 text-left text-xs font-medium border p-0">{(item.base?.base_name_nick?.length > 0 ? item.base.base_name_nick : item.base.base_name).replace(/maestro/gi, '').replace(/divya/gi, '')} {item.price > 0 && `(${item.price})`}</td>
                         {ADULT_SIZES.map(size => (
                           <td key={size} className="qty-td w-8 text-center font-medium border p-0">{quantities[size] || '-'}</td>
                         ))}
@@ -541,7 +563,7 @@ export default function SummaryPage() {
                       //<div key={idx} className="mb-0">
                       //<table><tbody>
                       <tr key={idx} className='border'>
-                        <td className="w-21 text-left text-xs font-medium border p-0">{item.base?.base_name_nick?.replace('maestro', '').replace('divya', '')} {item.price > 0 && `(${item.price})`}</td>
+                        <td className="w-21 text-left text-xs font-medium border p-0">{(item.base?.base_name_nick?.length > 0 ? item.base.base_name_nick : item.base.base_name).replace(/maestro/gi, '').replace(/divya/gi, '')} {item.price > 0 && `(${item.price})`}</td>
                         {KIDS_SIZES.map(size => (
                           <td key={size} className="qty-td w-8 text-center border font-medium p-0">{quantities[size] || '-'}</td>
                         ))}

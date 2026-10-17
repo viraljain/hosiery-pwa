@@ -1,0 +1,5 @@
+
+  SELECT id, name, phone, city
+  FROM dealers
+  WHERE search_score(name,search_text) > 11
+  ORDER BY name ASC;

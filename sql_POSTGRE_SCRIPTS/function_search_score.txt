@@ -1,0 +1,86 @@
+CREATE OR REPLACE FUNCTION search_score(
+    candidate text,
+    query text
+)
+RETURNS numeric
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    words text[];
+
+    exact_score numeric := 0;
+    ordered_score numeric := 0;
+    similarity_score numeric := 0;
+    soundex_score numeric := 0;
+BEGIN
+
+    IF candidate IS NULL OR query IS NULL OR trim(query) = '' THEN
+        RETURN 0;
+    END IF;
+
+    words := regexp_split_to_array(
+        lower(candidate),
+        '\W+'
+    );
+
+    ------------------------------------------------------------------
+    -- Exact Match
+    ------------------------------------------------------------------
+
+    IF lower(candidate) = lower(query) THEN
+        exact_score := 100;
+    END IF;
+
+    ------------------------------------------------------------------
+    -- Ordered Match
+    ------------------------------------------------------------------
+
+    IF lower(candidate) LIKE lower(
+        '%' ||
+        regexp_replace(trim(query), '\s+', '%', 'g')
+        || '%'
+    ) THEN
+        ordered_score := 50;
+    END IF;
+
+    ------------------------------------------------------------------
+    -- Best Word Similarity
+    ------------------------------------------------------------------
+
+    SELECT
+        COALESCE(
+            MAX(
+                similarity(
+                    word,
+                    lower(query)
+                )
+            ),
+            0
+        ) * 40
+    INTO similarity_score
+    FROM unnest(words) AS word;
+
+    ------------------------------------------------------------------
+    -- Soundex Match
+    ------------------------------------------------------------------
+
+    IF EXISTS (
+        SELECT 1
+        FROM unnest(words) AS word
+        WHERE soundex(word) = soundex(query)
+    ) THEN
+        soundex_score := 20;
+    END IF;
+
+    ------------------------------------------------------------------
+    -- Final Score
+    ------------------------------------------------------------------
+
+    RETURN
+        exact_score
+        + ordered_score
+        + similarity_score
+        + soundex_score;
+
+END;
+$$;

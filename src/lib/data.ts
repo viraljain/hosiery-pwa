@@ -50,22 +50,46 @@ export async function getOrderbyId(orderId: string) {
 }
 
 export async function searchProducts(query: string) {
-    const { data, error } = await supabase
-        .from("products_base")
-        // .select("id, base_name")
-        .select("id, base_name, base_name_nick")
-        .ilike("base_name", `%${query}%`)
+    //#update 261004 - Let's try to create a diverse search where each word in the search query is separately considered - 
+    //Eg - Hello World - should match - "Hello I am World", "Helloworld" & not just - "Hello World"
+    //In that way - .ilike("name", `%${query}%`) should behave like - .ilike("name", `%${word1}%{word2}%`)
+    //#CopilotSolution - const searchPattern = `%${query.trim().replace(/\s+/g, "%")}%`;
+    // .or(`name.ilike.${query_split}`)
+    // const query_split = query.trim().replace(/\s+/g,"%");
+
+    // const { data, error } = await supabase
+    //     .from("products_base")
+    //     // .select("id, base_name")
+    //     .select("id, base_name, base_name_nick")
+    //     //.ilike("base_name", `%${query}%`)
+    //     .ilike("base_name", `%${query_split}%`)
+    //     .limit(20);
+
+    const {data, error} = await supabase.rpc("product_search", {search_text: query})
         .limit(20);
+        
     if (error) throw new Error(error.message);
     return data ?? [];
 }
 
 export async function searchDealers(query: string) {
-    const { data, error } = await supabase
-        .from("dealers")
-        .select("id, name, phone, city")
-        .ilike("name", `%${query}%`)
+    //#update 261004 - Let's try to create a diverse search where each word in the search query is separately considered - 
+    //Eg - Hello World - should match - "Hello I am World", "Helloworld" & not just - "Hello World"
+    //In that way - .ilike("name", `%${query}%`) should behave like - .ilike("name", `%${word1}%{word2}%`)
+    //#CopilotSolution - const searchPattern = `%${query.trim().replace(/\s+/g, "%")}%`;
+    // .or(`name.ilike.${query_split}`)
+    // const query_split = query.trim().replace(/\s+/g,"%");
+
+    // const { data, error } = await supabase
+    //     .from("dealers")
+    //     .select("id, name, phone, city")
+    //     //.ilike("name", `%${query}%`)
+    //     .ilike("name", `%${query_split}%`)        
+    //     .limit(20);
+
+    const { data, error } = await supabase.rpc("dealer_search", { search_text: query })
         .limit(20);
+
     if (error) throw new Error(error.message);
     return data ?? [];
 }

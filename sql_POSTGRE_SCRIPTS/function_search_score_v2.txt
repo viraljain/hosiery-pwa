@@ -1,0 +1,119 @@
+CREATE OR REPLACE FUNCTION search_score(
+    candidate text,
+    query text
+)
+RETURNS numeric
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    candidate_words text[];
+    query_words text[];
+
+    qword text;
+
+    best_match numeric;
+    total_similarity numeric := 0;
+    query_word_count integer := 0;
+
+    exact_score numeric := 0;
+    ordered_score numeric := 0;
+BEGIN
+
+    ------------------------------------------------------------
+    -- Guard Clause
+    ------------------------------------------------------------
+
+    IF candidate IS NULL
+       OR query IS NULL
+       OR trim(query) = ''
+    THEN
+        RETURN 0;
+    END IF;
+
+    ------------------------------------------------------------
+    -- Exact Match
+    ------------------------------------------------------------
+
+    IF lower(candidate) = lower(query) THEN
+        --exact_score := 100;
+	RETURN 100;
+    END IF;
+
+    ------------------------------------------------------------
+    -- Ordered Match
+    ------------------------------------------------------------
+
+    IF lower(candidate) LIKE (
+        '%' ||
+        regexp_replace(
+            lower(trim(query)),
+            '\s+',
+            '%',
+            'g'
+        )
+        || '%'
+    )
+    THEN
+        --ordered_score := 50;
+	RETURN 100;
+    END IF;
+
+    ------------------------------------------------------------
+    -- Split Query & Candidate
+    ------------------------------------------------------------
+
+    candidate_words :=
+        regexp_split_to_array(
+            lower(candidate),
+            '\W+'
+        );
+
+    query_words :=
+        regexp_split_to_array(
+            lower(query),
+            '\W+'
+        );
+
+    ------------------------------------------------------------
+    -- Evaluate Every Query Word
+    ------------------------------------------------------------
+
+    FOREACH qword IN ARRAY query_words
+    LOOP
+
+        query_word_count := query_word_count + 1;
+
+        SELECT
+            COALESCE(
+                MAX(
+                    similarity(qword, cword)
+                    +
+                    CASE
+                    WHEN dmetaphone(qword) = dmetaphone(cword)
+                    THEN 0.20
+                    ELSE 0
+                    END
+                    )
+                ,
+                0
+            )
+        INTO best_match
+        FROM unnest(candidate_words) AS cword;
+
+        total_similarity :=
+            total_similarity + best_match;
+
+    END LOOP;
+
+    ------------------------------------------------------------
+    -- Average Similarity
+    ------------------------------------------------------------
+
+    RETURN
+          (
+            total_similarity
+            / GREATEST(query_word_count,1)
+          ) * 100;
+
+END;
+$$;

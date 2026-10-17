@@ -1,0 +1,9 @@
+-- DEALER NAME - GIN Type search index - suitable for Fuzzy/Trigram based search
+CREATE INDEX IF NOT EXISTS idx_dealers_name_trgm
+ON public.dealers
+USING gin (name gin_trgm_ops);
+
+-- PRODUCT NAME - GIN Type Search Index - suitable for Trigram/Fuzzy based search
+CREATE INDEX IF NOT EXISTS idx_products_name_trgm
+ON public.products_base
+using  gin(base_name gin_trgm_ops);
