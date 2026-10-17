@@ -255,10 +255,10 @@ export default function SummaryPage() {
   const { adultItems, kidsItems } = useMemo(() => {
     if (!selectedOrder) return { adultItems: [], kidsItems: [] };
     const adult = selectedOrder.items.filter((i: any) =>
-      Object.keys(i.quantities || {}).some((k: string) => ADULT_SIZES.includes(k))
+      Object.keys(i.quantities || {}).some((k: string) => ADULT_SIZES_MAIN.includes(k))
     );
   const kids = selectedOrder.items.filter((i: any) =>
-    Object.keys(i.quantities || {}).some((k: string) => KIDS_SIZES.includes(k))
+    Object.keys(i.quantities || {}).some((k: string) => KIDS_SIZES_MAIN.includes(k))
   );
 
   // #update starts 261017
