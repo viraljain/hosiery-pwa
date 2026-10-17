@@ -13,8 +13,8 @@ type Dealer = { id: string; name: string; phone?: string; city?: string };
 // #update starts 261017 - Let's try to make the sizes more flexible - instead of hardcoding them. 
 // Let's derive them from the order data itself. This way, if a new size is introduced, it will automatically be included in the summary without needing code changes.
 // If odd sizes like 77, 105, 110, etc. are not present in the selectedOrder data, they will be removed & not be visible. 
-// const ADULT_SIZES = ["77", "80", "85", "90", "95", "100", "105", "110", "120"];
-// const KIDS_SIZES = ["35", "40", "45", "50", "55", "60", "65", "70", "75"];
+const ADULT_SIZES_MAIN = ["77", "80", "85", "90", "95", "100", "105", "110", "120"];
+const KIDS_SIZES_MAIN = ["35", "40", "45", "50", "55", "60", "65", "70", "75"];
 var ADULT_SIZES = ["77", "80", "85", "90", "95", "100", "105", "110", "120"];
 var KIDS_SIZES = ["35", "40", "45", "50", "55", "60", "65", "70", "75"];
 // #update ends 261017
@@ -268,7 +268,8 @@ export default function SummaryPage() {
     )
   ].sort((a, b) => Number(a) - Number(b));
   //alert("Unq sizes - " + sizes_unique);
-
+  ADULT_SIZES = ADULT_SIZES_MAIN;
+  KIDS_SIZES = KIDS_SIZES_MAIN;
   if(!sizes_unique.includes("77")) { ADULT_SIZES = ADULT_SIZES.filter((s) => s !== "77"); }
   if(!sizes_unique.includes("105")) { ADULT_SIZES = ADULT_SIZES.filter((s) => s !== "105"); }
   if(!sizes_unique.includes("110")) { ADULT_SIZES = ADULT_SIZES.filter((s) => s !== "110"); }
