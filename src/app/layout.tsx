@@ -27,10 +27,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       
       <body className="min-h-screen bg-white">
-        <a href="/" className="inline-block bg-blue-600 text-white px-2 py-1 xl:px-4 xl:py-2 rounded hover:bg-blue-700" > Home </a>
-        <a href="/order" className="inline-block bg-blue-600 text-white px-2 py-1 xl:px-4 xl:py-2 rounded hover:bg-blue-700" > Order </a>
-        <a href="/summary" className="inline-block bg-blue-600 text-white px-2 py-1 xl:px-4 xl:py-2 rounded hover:bg-blue-700" > Summary </a>
-        <a href="/admin" className="inline-block bg-blue-600 text-white px-2 py-1 xl:px-4 xl:py-2 rounded hover:bg-blue-700" > Admin </a>
+        <nav className="flex gap-0.25 p-1 text-sm md:text-base">
+        <a href="/" className="inline-block bg-blue-600 text-white px-2 py-1 xl:px-4 xl:py-2 rounded hover:bg-blue-700 focus:bg-green-600" > Home </a>
+        <a href="/order" className="inline-block bg-blue-600 text-white px-2 py-1 xl:px-4 xl:py-2 rounded hover:bg-blue-700 focus:bg-green-600" > Order </a>
+        <a href="/summary" className="inline-block bg-blue-600 text-white px-2 py-1 xl:px-4 xl:py-2 rounded hover:bg-blue-700 focus:bg-green-600" > Summary </a>
+        <a href="/admin" className="inline-block bg-blue-600 text-white px-2 py-1 xl:px-4 xl:py-2 rounded hover:bg-blue-700 focus:bg-green-600" > Admin </a>
+        <a href="/pricelist" className="inline-block bg-blue-600 text-white px-2 py-1 xl:px-4 xl:py-2 rounded hover:bg-blue-700 focus:bg-green-600" > Price List </a>
+        <a href="/scheme" className="inline-block bg-blue-600 text-white px-2 py-1 xl:px-4 xl:py-2 rounded hover:bg-blue-700 focus:bg-green-600" > Scheme </a>
+        </nav>
         {children}
       </body>
     </html>
