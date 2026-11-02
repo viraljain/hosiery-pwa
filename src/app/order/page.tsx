@@ -206,6 +206,7 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
                             if (adult) {
                                 addRow("adult");
                                 selectProduct("adult", index_adult, Array.isArray(element.base) ? element.base[index] : element.base);
+                                setPrice("adult", index_adult, String(element.price));
                                 for (const [size, qty] of Object.entries(element.quantities)) {
                                     setQty("adult", index_adult, size, String(qty));
                                 }
@@ -214,6 +215,7 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
                             if (kids) {
                                 addRow("kids");
                                 selectProduct("kids", index_kids, Array.isArray(element.base) ? element.base[index] : element.base);
+                                setPrice("kids", index_kids, String(element.price));
                                 for (const [size, qty] of Object.entries(element.quantities)) {
                                     setQty("kids", index_kids, size, String(qty));
                                 }
@@ -342,23 +344,48 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
         // const url = `https://chat.whatsapp.com/GUZtwWJJE3UCPDccb4vqP6`;
         // window.open(url, "_blank");  
 
+        //order saved successfully. do you want to start a new order OR Send Whatsapp + Start new order? 
+        // Select "Send WhatsApp + Start new order" to send the order message to WhatsApp group and start a new order. 
+        // Select "Start new order" to just start a new order without sending the message to WhatsApp group.
+        window.confirm("Order saved successfully. Do you want to start a new order? Press CANCEL to send WhatsApp.") && newOrder();
 
         // reset
-        setSelectedDealer(null);
-        setNarration("");
-        setDealerQuery("");
-        setDealerOptions([]);
+        // setSelectedDealer(null);
+        // setNarration("");
+        // setDealerQuery("");
+        // setDealerOptions([]);
 
-        setIsSubmitting(false);
+        // setIsSubmitting(false);
 
-        setAdultItems([{ quantities: {}, index: 0 }]);
-        setAdultProductQuery([""]);
-        setAdultProductOptions([[]]);
+        // setAdultItems([{ quantities: {}, index: 0 }]);
+        // setAdultProductQuery([""]);
+        // setAdultProductOptions([[]]);
 
-        setKidsItems([{ quantities: {}, index: 0 }]);
-        setKidsProductQuery([""]);
-        setKidsProductOptions([[]]);
+        // setKidsItems([{ quantities: {}, index: 0 }]);
+        // setKidsProductQuery([""]);
+        // setKidsProductOptions([[]]);
     };
+    const newOrder = async()=>{
+        if (window.confirm("Are you sure you want to start a new order? This will clear the current order details.")) {
+            // Clear all order details
+            setSelectedDealer(null);
+            setNarration("");
+            setDealerQuery("");
+            setDealerOptions([]);
+
+            setIsSubmitting(false);
+            setCanWhatsApp(false);
+
+            setAdultItems([{ quantities: {}, index: 0 }]);
+            setAdultProductQuery([""]);
+            setAdultProductOptions([[]]);
+
+            setKidsItems([{ quantities: {}, index: 0 }]);
+            setKidsProductQuery([""]);
+            setKidsProductOptions([[]]);
+        }
+    };
+
     function buildWhatsAppMessage({ orderId, dealerName, adultItems, kidsItems, narration }
         : { orderId: string; dealerName?: string; adultItems: ItemRow[]; kidsItems: ItemRow[]; narration?: string }) {
         const header = [dealerName ? `${dealerName}` : null].filter(Boolean).join("\n");
@@ -392,15 +419,22 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
         <div className="min-h-screen bg-gray-50 py-1 px-1.5 sm:px-2 lg:px-3">
             <div className="mx-auto max-w-7xl">
                 <div className="flex items-center justify-between pb-1">
-                    <h2 className="text-xl font-bold text-gray-900">New Order</h2>
+                    <h2 className="text-lg font-bold text-gray-900">New Order</h2>
+                    <button
+                        onClick={newOrder}
+                        className={`px-1 py-1 rounded-lg font-medium text-xl text-white shadow-sm transition-colors
+                                    bg-green-400 hover:bg-green-700 active:bg-green-800
+                            }`}>
+                        🆕➕
+                    </button>
                     <button
                         onClick={saveOrder}
                         disabled={isSubmitting || !canSave}
-                        className={`px-3 py-1 rounded-lg font-medium text-white shadow-sm transition-colors
+                        className={`px-3 py-0.25 rounded-lg font-medium text-2xl text-white shadow-sm transition-colors
                                     ${canSave ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
                                 : "bg-gray-400 cursor-not-allowed"
                             }`}>
-                        {isSubmitting ? "⌛In Progress..." : (isModify ? "📝MODIFY" : "💾SAVE")}
+                        {isSubmitting ? "⌛In Progress..." : (isModify ? "📝" : "💾")}
                     </button>
                     <button onClick={(e) => {
                         e.preventDefault();
@@ -413,14 +447,14 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
                         // window.open(url, "_blank");
                     }}
                         disabled={!canWhatsApp}
-                        className={`px-3 py-1 rounded-lg font-medium text-white shadow-sm transition-colors
-                                    ${canWhatsApp ? "bg-green-600 hover:bg-blue-700 active:bg-blue-800"
+                        className={`px-3 py-0.25 rounded-lg font-medium text-2xl text-white shadow-sm transition-colors
+                                    ${canWhatsApp ? "bg-green-600 hover:bg-green-700 active:bg-green-800"
                                 : "bg-gray-400 cursor-not-allowed"
                             }`}
                     ><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 16 16" style={{ display: "inline-block", verticalAlign: "middle" }}>
                             <circle cx="8" cy="8" r="8" fill="#25D366" />
-                            <path fill="white" d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232" />WApp
-                        </svg>WApp
+                            <path fill="white" d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232" />
+                        </svg>
                     </button>
                     {/* <a href="#"
                       onClick={(e) => 
@@ -437,8 +471,8 @@ export default function OrderPage({ searchParams }: { searchParams: Promise<{ or
                     {/* Send to WhatsApp Group (Message copied -&gt; Open Group -&gt; Paste in chat & Send) */}
                     {/* WApp Group & Paste */}
                     {/* </a> */}
-                    <span className="bg-green-300 inline-block min-w-25 text-xl text-center font-bold text-gray-700">
-                        Total {grandTotal}
+                    <span className="bg-green-300 inline-block min-w-14 text-lg text-center font-bold text-gray-700">
+                    {grandTotal}
                     </span>
                 </div>
 
